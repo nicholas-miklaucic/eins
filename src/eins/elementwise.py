@@ -1,4 +1,4 @@
-"""Reduction operations."""
+"""Elementwise operations, for use in combination with reduction operations."""
 
 from abc import ABCMeta, abstractmethod
 
@@ -8,27 +8,27 @@ from numpy.array_api import _array_object as ao
 Array = ao.Array
 
 
-class Reduction(metaclass=ABCMeta):
-    """A function that takes in an arbitrary number of arrays and reduces them to a single array
-    along an axis. Common examples: sum, product, mean, norm."""
+class ElementwiseOp(metaclass=ABCMeta):
+    """Elementwise operation on scalars that can map to arrays of any shape.
+    A wrapped function of signature float -> float."""
 
     @classmethod
     @abstractmethod
     def parse(cls, name: str):
         """Attempts to construct an instance of the operation from the string name.
         If unsuccessful, returns None. Used for shorthand syntax, like passing in
-        'mean' instead of the named Mean op."""
+        'sqrt' instead of the named Sqrt op."""
         pass
 
     @abstractmethod
     def reduce(self, arr: Array) -> Array:
         """Applies the combination to an array on its first axis, eliminating it.
-        a1 *rest -> *rest."""
+        *shape -> *shape."""
         pass
 
 
-class ArrayMethod(Reduction):
-    """One of the methods in the Array API."""
+class ArrayElementwiseOp(ElementwiseOp):
+    """Elementwise operation defined in Array API."""
 
     def __init__(self, func_name: str):
         if hasattr(aa, func_name):
@@ -39,7 +39,7 @@ class ArrayMethod(Reduction):
             raise ValueError(msg)
 
     def __repr__(self):
-        return f'ArrayMethod[{self.func_name}]'
+        return f'ArrayElementwiseOp[{self.func_name}]'
 
     def __str__(self):
         return self.func_name
@@ -52,24 +52,13 @@ class ArrayMethod(Reduction):
             return None
 
     def reduce(self, arr: Array):
-        return self.func(arr, axis=0, keepdims=False)
+        return self.func(arr)
 
 
-Min = ArrayMethod('min')
-Max = ArrayMethod('max')
-Mean = ArrayMethod('mean')
-Prod = ArrayMethod('prod')
-Std = ArrayMethod('std')
-Var = ArrayMethod('var')
-Sum = ArrayMethod('sum')
-All = ArrayMethod('all')
-Any = ArrayMethod('any')
+# does it make sense to have every potential operation? acos, signbit, etc?
 
-
-# todo:
-# p-norm
-# p-deviance
-# logsumexp
-# softmax
-# median
-# quantile
+Sqrt = ArrayElementwiseOp('sqrt')
+Exp = ArrayElementwiseOp('exp')
+Log = ArrayElementwiseOp('log')
+Square = ArrayElementwiseOp('square')
+Abs = ArrayElementwiseOp('abs')
