@@ -1,6 +1,7 @@
 """Parsing the einops expression into a structured form with constraint variables."""
 
 import pprint
+from collections import defaultdict
 from dataclasses import dataclass
 
 import pyparsing as pp
@@ -77,13 +78,4 @@ def parse_einop(in_str):
 
 
 parse = parse_einop('a b=a c , c[a k] , b[a g] -> a*g+1 k')
-# pprint.pprint(parse)
-
-
-@dataclass(frozen=True, unsafe_hash=True)
-class Symbol:
-    """Symbol representing a variable in the einops expression."""
-
-    name: str
-
-@dataclass
+pprint.pprint(parse)

@@ -37,7 +37,7 @@ First, the ones that are familiar from `einops`:
 - Named dimensions, like `d`, `batch`, or `chan_in`
 - Parenthetical groupings of dimensions, to indicate the flattened version of the array without that
   grouping: `(a b c)` is the result from calling `.reshape(-1)` on an array of shape `a b c`
-- **TODO** `*batch`: matches any number of consecutive dimensions, at the start or end of an array
+- **TODO** `*batch`: matches any number of consecutive dimensions.
 
 `eins` adds a lot of powerful new functionality to this system:
 
