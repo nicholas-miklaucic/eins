@@ -3,7 +3,9 @@
 from abc import ABCMeta, abstractmethod, abstractproperty
 from dataclasses import dataclass
 from multiprocessing import Value
+from re import I
 
+from eins.parsing import Expr
 from eins.reduction import Prod, Reduction, Sum
 
 
@@ -103,12 +105,20 @@ class Reduce(Op):
         return Tensor(self.tensor.dims - {self.axis})
 
 
-class Environment:
-    """All of the information needed to understand a program."""
+class Program:
+    def __init__(self, expr: Expr, equations: list):
+        assert expr.op == '->' and len(expr.children) == 2
+        lhs, rhs = expr.children
 
-    def __init__(self):
+        if lhs.op == ',':
+            self.inputs = [lhs.children]
+        else:
+            self.inputs = [lhs]
+
+        self.output = rhs
+
         self.axes = {}
-        self.tensors = {}
+        self.equations = equations
 
     def ax(self, name: str) -> Axis:
         if name in self.axes:
@@ -129,7 +139,7 @@ class Environment:
         return self.tensors[out_name]
 
 
-env = Environment()
+env = Program()
 P = env.simple_tensor('P', 'a b')
 Q = env.simple_tensor('P', 'c b')
 R = env.simple_tensor('R', 'd c')

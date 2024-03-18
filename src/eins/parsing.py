@@ -70,8 +70,8 @@ expr = pp.infix_notation(
     ],
 )
 
-print(unpacked)
-pprint.pprint(expr.parse_string(unpacked).as_list())
+# print(unpacked)
+# pprint.pprint(expr.parse_string(unpacked).as_list())
 
 
 @dataclass
@@ -125,8 +125,10 @@ def make_expr(parsed: list | str) -> Expr:
         return Expr(op, [make_expr(lhs), make_expr(rhs)])
 
 
-ast = make_expr(expr.parse_string(unpacked).as_list())
-pprint.pprint(ast)
+# ast = make_expr(expr.parse_string(unpacked).as_list())
+# pprint.pprint(ast)
+
+equations = []
 
 
 def flatten(node: Node) -> Node:
@@ -144,9 +146,6 @@ def flatten(node: Node) -> Node:
             can_flatten = len(to_flatten) > 0
 
     return node
-
-
-equations = []
 
 
 def process_constraints(node: Node):
@@ -167,7 +166,14 @@ def replace_referents(node: Node):
                     node.children[i] = rhs
 
 
-for func in (process_constraints, replace_referents, flatten):
-    ast.tree_map(func)
-pprint.pprint(ast)
-pprint.pprint(equations)
+def postprocess_ast(ast: Node):
+    global equations
+    equations = []
+    for func in (process_constraints, replace_referents, flatten):
+        ast.tree_map(func)
+
+    return equations
+
+
+# pprint.pprint(ast)
+# pprint.pprint(equations)
