@@ -1,149 +1,160 @@
 """Symbolic representation of tensor operations and manipulations."""
 
-from abc import ABCMeta, abstractmethod, abstractproperty
+import pprint
+from abc import ABCMeta, abstractmethod
+from copy import deepcopy
 from dataclasses import dataclass
-from multiprocessing import Value
-from re import I
+from itertools import chain
+from typing import Sequence, Union
 
-from eins.parsing import Expr
+from eins.parsing import Constant, Constraints, Expr, Node, Symbol, make_expr, postprocess_ast, unpack_shorthands
+from eins.parsing import expr as expr_parser
 from eins.reduction import Prod, Reduction, Sum
 
 
-@dataclass(frozen=True, unsafe_hash=True)
-class Axis:
-    """A semantic representation of an axis."""
-
-    name: str
-
-    def __str__(self):
-        return self.name
+class ShapeOp(metaclass=ABCMeta):
+    @abstractmethod
+    def __call__(self, tensor: Expr) -> Expr:
+        raise NotImplementedError
 
 
 @dataclass
-class Tensor:
-    """Symbolic representation of a tensor, as a set of axes."""
+class ReshapeOp(ShapeOp):
+    new_shape: tuple[Node]
 
-    dims: set[Axis]
-
-    def __str__(self):
-        return ' '.join(map(str, self.dims))
+    def __call__(self, _tensor: Expr) -> Expr:
+        return Expr(' ', list(self.new_shape))
 
 
-class Op(metaclass=ABCMeta):
-    @abstractmethod
-    def name(self) -> str:
-        """The name of the operation."""
-        raise NotImplementedError()
+@dataclass
+class TransposeOp(ShapeOp):
+    perm: tuple[int]
 
-    @property
-    @abstractmethod
-    def inputs(self) -> list[Tensor]:
-        """The inputs to the operation."""
-        raise NotImplementedError()
-
-    @property
-    @abstractmethod
-    def output(self) -> Tensor:
-        """The output of the operation."""
-        raise NotImplementedError()
-
-    def __str__(self):
-        lhs = ', '.join(map(str, self.inputs))
-        rhs = str(self.output)
-        return f'{lhs:>20} -> {rhs}'
+    def __call__(self, tensor: Expr) -> Expr:
+        return Expr(' ', [tensor.children[i] for i in self.perm])
 
 
-class Combine(Op):
-    """Combines two tensors along an axis that matches."""
+@dataclass
+class SplitOp(ShapeOp):
+    axis_num: int
 
-    def __init__(self, left: Tensor, right: Tensor, axis: Axis, func: Reduction) -> None:
-        super().__init__()
+    def __call__(self, tensor: Expr) -> Expr:
+        if tensor.op == '+':
+            assert self.axis_num == 0
+            return Expr(',', tensor.children)
+        else:
+            assert tensor.children[self.axis_num].op == '+'
+            splits = []
+            for child in tensor.children[self.axis_num].children:
+                split = Expr(' ', tensor.children)
+                split.children[self.axis_num] = child
+                splits.append(split)
+            return Expr(',', splits)
 
-        if left.dims.intersection(right.dims) != {axis}:
-            msg = f'Cannot combine along {axis}.\nLeft:{left}\nRight:{right}'
+
+@dataclass
+class OneHotOp(ShapeOp):
+    def __call__(self, tensor: Expr) -> Expr:
+        assert tensor.op == '@'
+        assert len(tensor.children) == 2
+        shape, idx_axis = tensor.children
+        if isinstance(shape, Expr) and shape.op == ' ':
+            new_shape = deepcopy(shape)
+            new_shape.children.append(idx_axis)
+            return new_shape
+        else:
+            return Expr(' ', [shape, idx_axis])
+
+
+def apply_shape_ops(node: Node, ops: Sequence[ShapeOp]) -> Node:
+    for op in ops:
+        node = op(node)
+    return node
+
+
+def expanded_shape(node: Node) -> Sequence[Node]:
+    if isinstance(node, (Constant, Symbol)):
+        return [node]
+    else:
+        match node.op:
+            case '*':
+                return list(chain.from_iterable(map(expanded_shape, node.children)))
+            case '^':
+                return list(
+                    chain.from_iterable([expanded_shape(node.children[0]) for _ in range(node.children[1].value)])
+                )
+            case '+':
+                return [node]
+
+
+def normalize_recipe(node: Node) -> Sequence[ShapeOp]:
+    msg = 'Not a tensor'
+    if isinstance(node, (Constant, Symbol)):
+        return []
+    match node.op:
+        case '->':
             raise ValueError(msg)
-
-        self.left = left
-        self.right = right
-        self.axis = axis
-        self.func = func
-
-    def name(self):
-        return f'Combine({self.left}, {self.right}, {self.axis}, {self.func})'
-
-    @property
-    def inputs(self):
-        return [self.left, self.right]
-
-    @property
-    def output(self):
-        return Tensor(self.left.dims.union(self.right.dims))
-
-
-class Reduce(Op):
-    """Reduction, eliminating an axis."""
-
-    def __init__(self, tensor: Tensor, axis: Axis, func: Reduction) -> None:
-        super().__init__()
-        if axis not in tensor.dims:
-            msg = f'Cannot reduce along {axis}, not in tensor.\nTensor:{tensor}'
+        case ',':
             raise ValueError(msg)
-
-        self.tensor = tensor
-        self.axis = axis
-        self.func = func
-
-    def name(self):
-        return f'Reduce({self.tensor}, {self.axis}, {self.func})'
-
-    @property
-    def inputs(self):
-        return [self.tensor]
-
-    @property
-    def output(self):
-        return Tensor(self.tensor.dims - {self.axis})
+        case ' ':
+            # tensor with axes
+            new_shape = []
+            for child in node.children:
+                if isinstance(child, (Constant, Symbol)):
+                    # nothing to unpack
+                    new_shape.append(child)
+                elif isinstance(child, Expr):
+                    new_shape.extend(expanded_shape(child))
+            if new_shape != node.children:
+                return [ReshapeOp(new_shape), *normalize_recipe(ReshapeOp(new_shape)(node))]
+            else:
+                return []
+        case '@':
+            return [OneHotOp(), *normalize_recipe(OneHotOp()(node))]
+        case _:
+            msg = f'Invalid expression {node}: invalid op {node.op}'
+            raise ValueError(msg)
 
 
 class Program:
-    def __init__(self, expr: Expr, equations: list):
+    def __init__(self, expr: Expr, constr: Constraints):
         assert expr.op == '->' and len(expr.children) == 2
         lhs, rhs = expr.children
 
         if lhs.op == ',':
-            self.inputs = [lhs.children]
+            self.inputs = lhs.children
         else:
             self.inputs = [lhs]
 
         self.output = rhs
 
         self.axes = {}
-        self.equations = equations
+        self.equations = constr.equations
 
-    def ax(self, name: str) -> Axis:
-        if name in self.axes:
-            return self.axes[name]
-        else:
-            axis = Axis(name)
-            self.axes[name] = axis
-            return axis
+    @classmethod
+    def parse(cls, op: str):
+        expr = make_expr(expr_parser.parse_string(unpack_shorthands(op)).as_list())
+        constraints = postprocess_ast(expr)
+        return cls(expr, constraints)
 
-    def simple_tensor(self, name: str, shape: str) -> Tensor:
-        tens = Tensor({self.ax(name) for name in shape.split(' ')})
-        self.tensors[name] = tens
-        return tens
+    def __repr__(self):
+        strings = []
+        for i, inp in enumerate(self.inputs):
+            strings.append(f'Input {i+1}:\n{pprint.pformat(inp)}')
+        strings.append('-' * 50)
+        strings.append(f'Output:\n{pprint.pformat(self.output)}')
+        strings.append('-' * 50)
+        strings.append('Equations:')
+        for eqn in self.equations:
+            strings.append(f'{eqn[0]}\t=\t{eqn[1]}')
+        return '\n'.join(strings)
 
-    def apply_op(self, op: Op, out_name: str) -> Tensor:
-        print(op)
-        self.tensors[out_name] = op.output
-        return self.tensors[out_name]
+
+env = Program.parse('b ( d=(n p ) d) c, b p*p*c h, h[g k], h[i k] -> b (n^2 g+i) k')
+for child in [*env.inputs, env.output]:
+    ops = normalize_recipe(child)
+    print(ops)
+    print(apply_shape_ops(child, ops))
 
 
-env = Program()
-P = env.simple_tensor('P', 'a b')
-Q = env.simple_tensor('P', 'c b')
-R = env.simple_tensor('R', 'd c')
-S = env.apply_op(Combine(P, Q, env.ax('b'), Prod), 'S')
-Sr = env.apply_op(Reduce(S, env.ax('b'), Sum), 'Sr')
-T = env.apply_op(Combine(Sr, R, env.ax('c'), Prod), 'T')
-Tr = env.apply_op(Reduce(T, env.ax('c'), Sum), 'Tr')
+print(env)

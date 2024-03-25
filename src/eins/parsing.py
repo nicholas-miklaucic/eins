@@ -8,12 +8,14 @@ import pyparsing.common as ppc
 
 lparen = '('
 rparen = ')'
-parens = re.compile(r'\{\s*([^{} ,]+ )+?([^{}, ])\s*\}')
+parens = re.compile(r'\{\s*([^{} ,]+ )*?([^{}, ]+)\s*\}')
 index = re.compile(r'([^[ ,]+)\[([^\]]*)\]')
+pows_paren = re.compile(r'(\{[^{}]+\})\^(\d+)')
+pows_atomic = re.compile(r'([^{} +*/-]+)\^(\d+)')
 
 
 def unpack_parens(m: re.Match):
-    return lparen + '*'.join(f'{lparen}{g.strip()}{rparen}' for g in m.groups()) + rparen
+    return lparen + '*'.join(f'{lparen}{g.strip()}{rparen}' for g in m.groups() if g is not None) + rparen
 
 
 def unpack_index(m: re.Match):
@@ -21,12 +23,29 @@ def unpack_index(m: re.Match):
     return ' '.join(rest) + f' @ {ind}'
 
 
+def unpack_pow(m: re.Match):
+    left, right = m.groups()
+    return '{' + '*'.join(left.strip() for g in range(int(right))) + '}'
+
+
+MAX_NESTED_PARENS = 100
+
+
 def unpack_shorthands(expr: str):
     expr = expr.replace('(', '{').replace(')', '}')
-    for _i in range(5):
-        expr = re.sub(parens, unpack_parens, expr)
+    expr = re.sub(pows_paren, unpack_pow, expr)
+    expr = re.sub(pows_atomic, unpack_pow, expr)
 
-    expr = re.sub(index, unpack_index, expr)
+    new_expr = re.sub(parens, unpack_parens, expr)
+    num_times = 0
+    while new_expr != expr:
+        num_times += 1
+        if num_times > MAX_NESTED_PARENS:
+            msg = 'Stack overflow'
+            raise ValueError(msg)
+        new_expr, expr = re.sub(parens, unpack_parens, new_expr), new_expr
+
+    expr = re.sub(index, unpack_index, new_expr)
 
     return expr
 
@@ -35,7 +54,8 @@ def unpack_shorthands(expr: str):
 # parse = parse_einop('b k=(a a) a -> a b')
 # pprint.pprint(parse)
 
-unpacked = unpack_shorthands('b ( d=(n p ) d) c, b p*p*c h, h[g k] -> b n n g k')
+unpacked = unpack_shorthands('b ( d=(n p ) d) c, b p*p*c h, h[g k], h[i k] -> b (n^2 g+i) k')
+
 # b ((d=((n)*(p)))*(d)) c, b p*p*c h, h[] k -> b n n k
 
 
@@ -70,8 +90,8 @@ expr = pp.infix_notation(
     ],
 )
 
-# print(unpacked)
-# pprint.pprint(expr.parse_string(unpacked).as_list())
+print(unpacked)
+pprint.pprint(expr.parse_string(unpacked).as_list())
 
 
 @dataclass
@@ -148,31 +168,33 @@ def flatten(node: Node) -> Node:
     return node
 
 
-def process_constraints(node: Node):
-    if isinstance(node, Expr) and node.op == '=':
-        if len(node.children) != 2:  # noqa: PLR2004
-            msg = 'Must have exactly two parts to equality'
-            raise ValueError(msg)
-        lhs, rhs = node.children
-        equations.append((lhs, rhs))
-        node.replace_with(rhs)
+class Constraints:
+    def __init__(self):
+        self.equations = []
 
+    def process_constraints(self, node: Node):
+        if isinstance(node, Expr) and node.op == '=':
+            if len(node.children) != 2:  # noqa: PLR2004
+                msg = 'Must have exactly two parts to equality'
+                raise ValueError(msg)
+            lhs, rhs = node.children
+            self.equations.append((lhs, rhs))
+            node.replace_with(rhs)
 
-def replace_referents(node: Node):
-    if isinstance(node, Expr):
-        for i, child in enumerate(node.children):
-            for lhs, rhs in equations:
-                if child == lhs:
-                    node.children[i] = rhs
+    def replace_referents(self, node: Node):
+        if isinstance(node, Expr):
+            for i, child in enumerate(node.children):
+                for lhs, rhs in self.equations:
+                    if child == lhs:
+                        node.children[i] = rhs
 
 
 def postprocess_ast(ast: Node):
-    global equations
-    equations = []
-    for func in (process_constraints, replace_referents, flatten):
+    constraints = Constraints()
+    for func in (constraints.process_constraints, constraints.replace_referents, flatten):
         ast.tree_map(func)
 
-    return equations
+    return constraints
 
 
 # pprint.pprint(ast)
