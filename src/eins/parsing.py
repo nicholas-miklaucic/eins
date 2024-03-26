@@ -1,3 +1,4 @@
+from copy import deepcopy
 import pprint
 import re
 from dataclasses import dataclass
@@ -54,8 +55,6 @@ def unpack_shorthands(expr: str):
 # parse = parse_einop('b k=(a a) a -> a b')
 # pprint.pprint(parse)
 
-unpacked = unpack_shorthands('b ( d=(n p ) d) c, b p*p*c h, h[g k], h[i k] -> b (n^2 g+i) k')
-
 # b ((d=((n)*(p)))*(d)) c, b p*p*c h, h[] k -> b n n k
 
 
@@ -82,16 +81,13 @@ expr = pp.infix_notation(
         (pow_op, 2, pp.OpAssoc.LEFT),
         (mul_op, 2, pp.OpAssoc.LEFT),
         (add_op, 2, pp.OpAssoc.LEFT),
-        (seq_op, 2, pp.OpAssoc.LEFT),
         (eq_op, 2, pp.OpAssoc.LEFT),
+        (seq_op, 2, pp.OpAssoc.LEFT),        
         (index_op, 2, pp.OpAssoc.LEFT),
         (comma_op, 2, pp.OpAssoc.LEFT),
         (arrow, 2, pp.OpAssoc.LEFT),
     ],
 )
-
-print(unpacked)
-pprint.pprint(expr.parse_string(unpacked).as_list())
 
 
 @dataclass
@@ -99,7 +95,7 @@ class Constant:
     value: int
 
     def __repr__(self):
-        return repr(self.value)
+        return str(self.value)
 
 
 @dataclass
@@ -107,7 +103,7 @@ class Symbol:
     value: str
 
     def __repr__(self):
-        return repr(self.value)
+        return str(self.value)
 
 
 Node = Union[Constant, Symbol, 'Expr']
@@ -130,6 +126,9 @@ class Expr:
     def replace_with(self, new: 'Expr'):
         self.op, self.children = new.op, new.children
 
+    def __str__(self):
+        return f'({self.op} ' + ' '.join(map(str, self.children)) + ')'
+
 
 def make_expr(parsed: list | str) -> Expr:
     if isinstance(parsed, str):
@@ -144,9 +143,6 @@ def make_expr(parsed: list | str) -> Expr:
         lhs, op, *rhs = parsed
         return Expr(op, [make_expr(lhs), make_expr(rhs)])
 
-
-# ast = make_expr(expr.parse_string(unpacked).as_list())
-# pprint.pprint(ast)
 
 equations = []
 
@@ -179,7 +175,7 @@ class Constraints:
                 raise ValueError(msg)
             lhs, rhs = node.children
             self.equations.append((lhs, rhs))
-            node.replace_with(rhs)
+            node.replace_with(Expr(' ', [lhs]))            
 
     def replace_referents(self, node: Node):
         if isinstance(node, Expr):
@@ -191,11 +187,18 @@ class Constraints:
 
 def postprocess_ast(ast: Node):
     constraints = Constraints()
-    for func in (constraints.process_constraints, constraints.replace_referents, flatten):
+    for func in (constraints.process_constraints, 
+                 # constraints.replace_referents, 
+                 flatten):
         ast.tree_map(func)
 
     return constraints
 
 
+# unpacked = unpack_shorthands('b ((n p) (n p)) c d=c, b p*p*c*d h, h[g k], h[i k] -> b (n^2 g+i) k')
+# print(unpacked)
+# pprint.pprint(expr.parse_string(unpacked).as_list())
+# ast = make_expr(expr.parse_string(unpacked).as_list())
+# pprint.pprint(ast)
 # pprint.pprint(ast)
 # pprint.pprint(equations)

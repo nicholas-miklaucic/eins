@@ -12,65 +12,116 @@ from eins.parsing import expr as expr_parser
 from eins.reduction import Prod, Reduction, Sum
 
 
+class Tensor:
+    """Node in a tensor network."""
+    def __init__(self, expr: Node):
+        self.parents = []
+        self.children = []
+        self.child_ops = []
+        self.idx_axis = None
+        if expr.op == ' ':
+            self.axes = expr.children
+        elif expr.op == '@':
+            self.axes = Tensor(expr.children[0]).axes
+            self.idx_axis = expr.children[1]
+        else:
+            self.axes = [expr]
+
+    def add_child(self, child: 'Tensor', op: 'ShapeOp'):
+        child.parents.append(self)
+        self.children.append(child)
+        self.child_ops.append(op)
+
+    def __repr__(self):
+        idx_expr = '' if self.idx_axis is None else f' @ {self.idx_axis}'
+        ax_expr = ' '.join(map(str, self.axes))
+        return ax_expr + idx_expr
+
+
 class ShapeOp(metaclass=ABCMeta):
     @abstractmethod
-    def __call__(self, tensor: Expr) -> Expr:
+    def apply(self, tensors: Sequence[Tensor]) -> Sequence[Tensor]:
         raise NotImplementedError
+    
+    def __call__(self, tensors: Union[Tensor, Sequence[Tensor]]) -> Sequence[Tensor]:
+        if isinstance(tensors, Tensor):
+            tensors = [tensors]
+        children = self.apply(tensors)
+
+        for child in children:
+            for t in tensors:
+                t.add_child(child, self)
+        return children
+    
 
 
 @dataclass
-class ReshapeOp(ShapeOp):
+class Reshape(ShapeOp):
     new_shape: tuple[Node]
 
-    def __call__(self, _tensor: Expr) -> Expr:
-        return Expr(' ', list(self.new_shape))
+    def apply(self, _tensor: Sequence[Tensor]) -> Sequence[Tensor]:
+        return [Tensor(Expr(' ', list(self.new_shape)))]
 
 
 @dataclass
-class TransposeOp(ShapeOp):
+class Transpose(ShapeOp):
     perm: tuple[int]
 
-    def __call__(self, tensor: Expr) -> Expr:
-        return Expr(' ', [tensor.children[i] for i in self.perm])
+    def apply(self, tensors: Sequence[Tensor]) -> Sequence[Tensor]:
+        return [Tensor(Expr(' ', [tensors[0][i] for i in self.perm]))]
 
 
 @dataclass
-class SplitOp(ShapeOp):
+class Split(ShapeOp):
     axis_num: int
 
-    def __call__(self, tensor: Expr) -> Expr:
-        if tensor.op == '+':
-            assert self.axis_num == 0
-            return Expr(',', tensor.children)
-        else:
-            assert tensor.children[self.axis_num].op == '+'
-            splits = []
-            for child in tensor.children[self.axis_num].children:
-                split = Expr(' ', tensor.children)
-                split.children[self.axis_num] = child
-                splits.append(split)
-            return Expr(',', splits)
+    def apply(self, tensors: Sequence[Tensor]) -> Sequence[Tensor]:
+        children = []
+        for addend in tensors[0].axes[self.axis_num].children:
+            child = deepcopy(tensors[0])
+            child.axes[self.axis_num] = addend
+            children.append(child)
+        return children
 
 
 @dataclass
-class OneHotOp(ShapeOp):
-    def __call__(self, tensor: Expr) -> Expr:
-        assert tensor.op == '@'
-        assert len(tensor.children) == 2
-        shape, idx_axis = tensor.children
-        if isinstance(shape, Expr) and shape.op == ' ':
-            new_shape = deepcopy(shape)
-            new_shape.children.append(idx_axis)
-            return new_shape
-        else:
-            return Expr(' ', [shape, idx_axis])
+class OneHot(ShapeOp):
+    idx_axis: Node
 
+    def apply(self, tensors: Sequence[Tensor]) -> Sequence[Tensor]:
+        child = deepcopy(tensors[0])
+        child.axes.append(child.idx_axis)
+        child.idx_axis = None
+        return [child]
+    
+@dataclass
+class ExpandTo(ShapeOp):
+    """Adds new axes with 1 to broadcast with the current shape. Output should be 
+    a supersequence of the current shape."""
+    new_shape: tuple[Node]
+    
+    def apply(self, _tensors: Sequence[Tensor]) -> Sequence[Tensor]:
+        return [Tensor(Expr(' ', list(self.new_shape)))]
+    
+    
+@dataclass
+class Combine(ShapeOp):
+    method: Reduction
 
-def apply_shape_ops(node: Node, ops: Sequence[ShapeOp]) -> Node:
-    for op in ops:
-        node = op(node)
-    return node
+    def apply(self, tensors: Sequence[Tensor]) -> Sequence[Tensor]:
+        return [deepcopy(tensors[0])]
+    
 
+@dataclass
+class Reduce(ShapeOp):
+    method: Reduction
+    axis: Node
+
+    def apply(self, tensors: Sequence[Tensor]) -> Sequence[Tensor]:
+        out = deepcopy(tensors[0])
+        out.axes = [ax for ax in out.axes if ax != self.axis]
+        return [out]
+        
 
 def expanded_shape(node: Node) -> Sequence[Node]:
     if isinstance(node, (Constant, Symbol)):
@@ -87,33 +138,41 @@ def expanded_shape(node: Node) -> Sequence[Node]:
                 return [node]
 
 
-def normalize_recipe(node: Node) -> Sequence[ShapeOp]:
-    msg = 'Not a tensor'
-    if isinstance(node, (Constant, Symbol)):
-        return []
-    match node.op:
-        case '->':
-            raise ValueError(msg)
-        case ',':
-            raise ValueError(msg)
-        case ' ':
-            # tensor with axes
-            new_shape = []
-            for child in node.children:
-                if isinstance(child, (Constant, Symbol)):
-                    # nothing to unpack
-                    new_shape.append(child)
-                elif isinstance(child, Expr):
-                    new_shape.extend(expanded_shape(child))
-            if new_shape != node.children:
-                return [ReshapeOp(new_shape), *normalize_recipe(ReshapeOp(new_shape)(node))]
+def normalize_step(tensor: Tensor) -> Sequence[Tensor]:
+    # tensor with axes
+    if tensor.idx_axis is None:        
+        for i, ax in enumerate(tensor.axes):
+            if isinstance(ax, Expr) and ax.op in ('*', '^'):            
+                # simple flatten
+                new_shape = (deepcopy(tensor.axes[:i]) + expanded_shape(ax) + deepcopy(tensor.axes[i+1:]))
+                return Reshape(new_shape)(tensor)
+            elif isinstance(ax, Expr) and ax.op == '+':
+                # split
+                return Split(i)(tensor)
+    else:        
+        return OneHot(tensor.idx_axis)(tensor)
+    
+    # if we get here, no change: in normal form
+    return []
+
+
+def normalize_until_done(tensor: Tensor) -> Sequence[Tensor]:
+    outs = [tensor]
+    done = False
+    while not done:
+        new_outs = []        
+        done = True
+        for out in outs:
+            normalized = normalize_step(out)
+            if normalized:
+                # did something
+                new_outs.extend(normalized)
+                done = False
             else:
-                return []
-        case '@':
-            return [OneHotOp(), *normalize_recipe(OneHotOp()(node))]
-        case _:
-            msg = f'Invalid expression {node}: invalid op {node.op}'
-            raise ValueError(msg)
+                new_outs.append(out)
+
+        outs = new_outs
+    return outs
 
 
 class Program:
@@ -122,13 +181,16 @@ class Program:
         lhs, rhs = expr.children
 
         if lhs.op == ',':
-            self.inputs = lhs.children
+            self.sources = [Tensor(c) for c in lhs.children]
         else:
-            self.inputs = [lhs]
+            self.sources = [Tensor(lhs)]
 
-        self.output = rhs
+        self.current = []
+        for source in self.sources:
+            self.current.extend(normalize_until_done(source))
 
-        self.axes = {}
+        self.sink = Tensor(rhs)
+    
         self.equations = constr.equations
 
     @classmethod
@@ -139,10 +201,13 @@ class Program:
 
     def __repr__(self):
         strings = []
-        for i, inp in enumerate(self.inputs):
+        for i, inp in enumerate(self.sources):
             strings.append(f'Input {i+1}:\n{pprint.pformat(inp)}')
         strings.append('-' * 50)
-        strings.append(f'Output:\n{pprint.pformat(self.output)}')
+        for i, inp in enumerate(self.current):
+            strings.append(f'Current {i+1}:\n{pprint.pformat(inp)}')
+        strings.append('-' * 50)
+        strings.append(f'Output:\n{pprint.pformat(self.sink)}')
         strings.append('-' * 50)
         strings.append('Equations:')
         for eqn in self.equations:
@@ -150,11 +215,11 @@ class Program:
         return '\n'.join(strings)
 
 
-env = Program.parse('b ( d=(n p ) d) c, b p*p*c h, h[g k], h[i k] -> b (n^2 g+i) k')
-for child in [*env.inputs, env.output]:
-    ops = normalize_recipe(child)
-    print(ops)
-    print(apply_shape_ops(child, ops))
-
-
+env = Program.parse('b ((n p) (n p)) c d=c, b p*p*d*c h, h[g+i k] -> b (n^2 g+i) k')
 print(env)
+
+
+# sugar: doubled axes can be replaced with =, using the narrow "different axis + constraint"
+# interpretation of =
+
+# add cost analysis to exprs in future?
