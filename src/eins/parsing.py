@@ -1,8 +1,8 @@
-from copy import deepcopy
 import pprint
 import re
+from copy import deepcopy
 from dataclasses import dataclass
-from typing import Callable, Union
+from typing import Callable, Optional, Union
 
 import pyparsing as pp
 import pyparsing.common as ppc
@@ -82,7 +82,7 @@ expr = pp.infix_notation(
         (mul_op, 2, pp.OpAssoc.LEFT),
         (add_op, 2, pp.OpAssoc.LEFT),
         (eq_op, 2, pp.OpAssoc.LEFT),
-        (seq_op, 2, pp.OpAssoc.LEFT),        
+        (seq_op, 2, pp.OpAssoc.LEFT),
         (index_op, 2, pp.OpAssoc.LEFT),
         (comma_op, 2, pp.OpAssoc.LEFT),
         (arrow, 2, pp.OpAssoc.LEFT),
@@ -90,7 +90,7 @@ expr = pp.infix_notation(
 )
 
 
-@dataclass
+@dataclass(unsafe_hash=True)
 class Constant:
     value: int
 
@@ -98,7 +98,7 @@ class Constant:
         return str(self.value)
 
 
-@dataclass
+@dataclass(unsafe_hash=True)
 class Symbol:
     value: str
 
@@ -168,6 +168,16 @@ class Constraints:
     def __init__(self):
         self.equations = []
 
+    def __repr__(self) -> str:
+        lines = []
+        for lhs, rhs in self.equations:
+            lines.append(f'{lhs!s:>20} = {rhs!s}')
+        return '\n'.join(lines)
+
+    def add_constraint(self, lhs: Node, rhs: Node):
+        if (lhs, rhs) not in self.equations:
+            self.equations.append((lhs, rhs))
+
     def process_constraints(self, node: Node):
         if isinstance(node, Expr) and node.op == '=':
             if len(node.children) != 2:  # noqa: PLR2004
@@ -175,7 +185,7 @@ class Constraints:
                 raise ValueError(msg)
             lhs, rhs = node.children
             self.equations.append((lhs, rhs))
-            node.replace_with(Expr(' ', [lhs]))            
+            node.replace_with(Expr(' ', [lhs]))
 
     def replace_referents(self, node: Node):
         if isinstance(node, Expr):
@@ -184,12 +194,45 @@ class Constraints:
                     if child == lhs:
                         node.children[i] = rhs
 
+    def disambiguate_axes(self, node: Node, curr_axes: Optional[list[Node]] = None):
+        if curr_axes is None:
+            curr_axes = []
+        if isinstance(node, Expr):
+            if node.op in (',', '->', '@'):
+                for i, child in enumerate(node.children):
+                    new = self.disambiguate_axes(child, curr_axes=[])
+                    if new != child:
+                        node.children[i] = new
+            elif node.op in ('+', '*', ' ', '^'):
+                for i, child in enumerate(node.children):
+                    new = self.disambiguate_axes(child, curr_axes=curr_axes)
+                    if new != child:
+                        node.children[i] = new
+        elif isinstance(node, Symbol):
+            num = 1
+            orig_value = node.value
+            node_value = orig_value
+            while node_value in curr_axes:
+                num += 1
+                # use - because it's not allowed in user identifiers
+                node_value = f'{orig_value}-{num}'
+
+            curr_axes.append(node_value)
+            if num > 1:
+                new_node = Symbol(node_value)
+                self.add_constraint(new_node, node)
+                return new_node
+        return node
+
 
 def postprocess_ast(ast: Node):
     constraints = Constraints()
-    for func in (constraints.process_constraints, 
-                 # constraints.replace_referents, 
-                 flatten):
+    for func in (
+        constraints.process_constraints,
+        # constraints.replace_referents,
+        flatten,
+        constraints.disambiguate_axes,
+    ):
         ast.tree_map(func)
 
     return constraints
@@ -199,6 +242,7 @@ def postprocess_ast(ast: Node):
 # print(unpacked)
 # pprint.pprint(expr.parse_string(unpacked).as_list())
 # ast = make_expr(expr.parse_string(unpacked).as_list())
-# pprint.pprint(ast)
-# pprint.pprint(ast)
-# pprint.pprint(equations)
+# print(ast)
+# constr = postprocess_ast(ast)
+# print(ast)
+# print(constr)
