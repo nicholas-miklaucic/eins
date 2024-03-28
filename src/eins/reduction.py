@@ -21,8 +21,8 @@ class Reduction(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def reduce(self, arr: Array) -> Array:
-        """Applies the combination to an array on its first axis, eliminating it.
+    def reduce(self, arr: Array, axis: int = 0) -> Array:
+        """Applies the combination to an array on an axis, eliminating it.
         a1 *rest -> *rest."""
         pass
 
@@ -51,8 +51,8 @@ class ArrayMethod(Reduction):
         except ValueError as _e:
             return None
 
-    def reduce(self, arr: Array):
-        return self.func(arr, axis=0, keepdims=False)
+    def reduce(self, arr: Array, axis: int = 0):
+        return self.func(arr, axis=axis, keepdims=False)
 
 
 Min = ArrayMethod('min')
