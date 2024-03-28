@@ -9,7 +9,8 @@ from dataclasses import dataclass
 from itertools import chain
 from typing import Mapping, Sequence, Set, Tuple, Union
 
-from eins.parsing import Constant, Constraints, Expr, Node, Symbol, make_expr, postprocess_ast, unpack_shorthands
+from eins.constraint import Constraints, postprocess_ast
+from eins.parsing import Constant, Expr, Node, Symbol, make_expr, unpack_shorthands
 from eins.parsing import expr as expr_parser
 from eins.reduction import Array, Prod, Reduction, Sum
 
@@ -250,6 +251,10 @@ class Program:
         self.orig_sink = Tensor(rhs)
         self.sinks = normalize_until_done(self.orig_sink)
         self.constr = constr
+
+        for t in self.current + self.sinks:
+            self.constr.add_variables(t.axes_list())
+
         self.combine = combine
 
         self.reduce = defaultdict(lambda: reduce)
@@ -288,9 +293,15 @@ class Program:
             for sink_input, sink in zip(per_sink_inputs, self.sinks):
                 self.outputs.append(self.connect(sink_input, sink))
 
-            reverse_graph(self.orig_sink)
         else:
             self.outputs.append(self.connect(self.current, self.sinks[0]))
+
+        reverse_graph(self.orig_sink)
+
+        for out in self.outputs:
+            for sink in self.sinks:
+                if out.is_same_shape(sink):
+                    out.children = sink.children
 
     @ft.lru_cache
     @staticmethod
