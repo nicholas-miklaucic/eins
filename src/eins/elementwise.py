@@ -4,8 +4,6 @@ from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
 from typing import Literal
 
-import array_api_compat
-
 from eins.common_types import Array
 from eins.utils import array_backend
 
