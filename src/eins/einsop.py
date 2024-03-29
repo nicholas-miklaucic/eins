@@ -274,22 +274,20 @@ class EinsOp:
 
 def einsop(op_str: str, *tensors: Array, reduce: ReduceArg = 'sum', combine: CombineArg = 'multiply') -> Array:
     """
-    A functional version of EinsOp that does not allow for inspection or caching. This exists mainly as a bridge between
-    that interface and the familiar one used by einops. Use EinsOp instead for serious development.
+    A functional version of `EinsOp` that does not allow for inspection or caching. This exists mainly as a bridge
+    between that interface and the familiar one used by einops. Use `EinsOp` instead for serious development.
 
-    For full documentation, consult the EinsOp class.
+    For full documentation, consult the `EinsOp` class.
 
-    Args:
-        op_str: The einops operation string.
+    :param op_str: The einops operation string.
 
-        tensors: The tensors to apply the operation to. Should be all the same type, and support the Array API.
+    :param tensors: The tensors to apply the operation to. Should be all the same type, and support the Array API.
 
-        reduce: The reduction operation to apply to the outputs of the operation. Defaults to sum.
+    :param reduce: The reduction operation to apply to the outputs of the operation. Defaults to `'sum'`.
 
-        combine: The combination operation to apply to the outputs of the operation. Defaults to multiply.
+    :param combine: The combination operation to apply to the outputs of the operation. Defaults to `'multiply'`.
 
-    Returns:
-        The result of the EinsOp.
+    :returns: The result of the EinsOp.
     """
     op = EinsOp(op_str, reduce=reduce, combine=combine)
     return op(*tensors)
