@@ -1,22 +1,21 @@
-import pprint
 import re
-from copy import deepcopy
 from dataclasses import dataclass
-from typing import Callable, Optional, Union
+from typing import Callable, Union
 
 import pyparsing as pp
-import pyparsing.common as ppc
 
 lparen = '('
 rparen = ')'
-parens = re.compile(r'\{\s*([^{} ,]+ )*?([^{}, ]+)\s*\}')
+parens = re.compile(r'\{[^{}]*\}')
 index = re.compile(r'([^[ ,]+)\[([^\]]*)\]')
 pows_paren = re.compile(r'(\{[^{}]+\})\^(\d+)')
 pows_atomic = re.compile(r'([^{} +*/-]+)\^(\d+)')
 
 
 def unpack_parens(m: re.Match):
-    return lparen + '*'.join(f'{lparen}{g.strip()}{rparen}' for g in m.groups() if g is not None) + rparen
+    body = m.group()[1:-1]
+    exprs = body.split(' ')
+    return lparen + '*'.join(f'{lparen}{expr}{rparen}' for expr in exprs) + rparen
 
 
 def unpack_index(m: re.Match):
@@ -147,7 +146,7 @@ def make_expr(parsed: list | str) -> Expr:
 equations = []
 
 
-# unpacked = unpack_shorthands('b ((n p) (n p)) c d=c, b p*p*c*d h, h[g k], h[i k] -> b (n^2 g+i) k')
+# unpacked = unpack_shorthands('(patch patch chan) -> patch patch chan')
 # print(unpacked)
 # pprint.pprint(expr.parse_string(unpacked).as_list())
 # ast = make_expr(expr.parse_string(unpacked).as_list())

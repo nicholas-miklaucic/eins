@@ -36,6 +36,7 @@ To do:
 - Get a basic perf comparison
 - Docs website, maybe rewrite a few big models
 - Example with non-Latin characters
+- Unit array
 - `pyproject.toml` fun stuff
 - Put constraints in a separate dict, to free up kwargs for further changes
 

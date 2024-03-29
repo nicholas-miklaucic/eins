@@ -2,10 +2,12 @@
 
 from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
+from typing import Literal
 
 import array_api_compat
 
 from eins.common_types import Array
+from eins.utils import array_backend
 
 
 class ElementwiseOp(metaclass=ABCMeta):
@@ -13,12 +15,11 @@ class ElementwiseOp(metaclass=ABCMeta):
     Signature *arr -> *arr."""
 
     @classmethod
-    @abstractmethod
-    def parse(cls, name: str):
+    def parse(cls, _name: str):
         """Attempts to construct an instance of the operation from the string name.
         If unsuccessful, returns None. Used for shorthand syntax, like passing in
         'sqrt' instead of the named Sqrt op."""
-        raise NotImplementedError
+        return None
 
     @abstractmethod
     def __call__(self, arr: Array) -> Array:
@@ -30,6 +31,41 @@ class ElementwiseOp(metaclass=ABCMeta):
 
 # Every method without another argument that returns a number.
 ARRAY_ELEMWISE_OPS = [
+    'abs',
+    'acos',
+    'acosh',
+    'asin',
+    'asinh',
+    'atan',
+    'atanh',
+    'bitwise_invert',
+    'ceil',
+    'conj',
+    'cos',
+    'cosh',
+    'exp',
+    'expm1',
+    'floor',
+    'imag',
+    'log',
+    'log1p',
+    'log2',
+    'log10',
+    'negative',
+    'positive',
+    'real',
+    'round',
+    'sign',
+    'sin',
+    'sinh',
+    'square',
+    'sqrt',
+    'tan',
+    'tanh',
+    'trunc',
+]
+
+ElementwiseLiteral = Literal[
     'abs',
     'acos',
     'acosh',
@@ -76,20 +112,26 @@ class ArrayElementwiseOp(ElementwiseOp):
 
     @classmethod
     def parse(cls, name: str):
-        if name.lower().strip() in ARRAY_ELEMWISE_OPS:
-            return cls(name.lower().strip())
+        if name in ARRAY_ELEMWISE_OPS:
+            return cls(name)
         else:
             return None
 
     def __call__(self, arr: Array) -> Array:
-        try:
-            xp = array_api_compat.get_namespace(arr)
-            if hasattr(xp, self.func_name):
-                func = getattr(xp, self.func_name)
-                return func(arr)
-        except TypeError:
-            if hasattr(arr, self.func_name):
-                func = getattr(arr, self.func_name)()
-            else:
-                msg = f'Name {self.func_name} not a valid function for array of type {type(arr)}'
-                raise ValueError(msg) from None
+        xp = array_backend(arr)
+        if hasattr(xp, self.func_name):
+            func = getattr(xp, self.func_name)
+            return func(arr)
+        elif hasattr(arr, self.func_name):
+            func = getattr(arr, self.func_name)()
+        else:
+            msg = f'Name {self.func_name} not a valid function for array of type {type(arr)}'
+            raise ValueError(msg) from None
+
+
+def parse_elementwise(name: str) -> ElementwiseOp:
+    arr_parse = ArrayElementwiseOp.parse(name)
+    if arr_parse is not None:
+        return arr_parse
+    else:
+        return None

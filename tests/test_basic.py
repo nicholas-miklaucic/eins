@@ -2,13 +2,13 @@ import numpy as np
 import pytest
 from pyparsing import ParseException
 
-from eins.eager_eins import eager_eins
+from eins.einsop import einsop
 from eins.parsing import expr
 
 
 def run_with_randn(op_str: str, *shapes, **kwargs):
     tensors = [np.random.randn(*shape) for shape in shapes]
-    return tensors, eager_eins(op_str, *tensors, **kwargs)
+    return tensors, einsop(op_str, *tensors, **kwargs)
 
 
 def test_matrix_mul():
@@ -23,5 +23,4 @@ def test_big_kahuna():
         (6, 64, 3, 3),
         (6, 36, 7),
         (7, 1, 8),
-        (9, 56),
     )

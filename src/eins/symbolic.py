@@ -23,6 +23,10 @@ class Tensor:
         self.parents = []
         self.children = []
         self.idx_axis = None
+        if isinstance(expr, (Constant, Symbol)):
+            self.axes = [expr]
+            return
+
         if expr.op == ' ':
             self.axes = expr.children
         elif expr.op == '@':
@@ -384,7 +388,7 @@ class Program:
         return '\n'.join(strings)
 
 
-env = Program.parse('b ((n p) (n p)) c d=c, b p*p*d*c h, h[g+i k] -> b (n^2 g+i) k')
+# env = Program.parse('b ((n p) (n p)) c d=c, b p*p*d*c h, h[g+i k] -> b (n^2 g+i) k')
 # env = Program.parse('a b, b c -> a c')
 # print(env)
 

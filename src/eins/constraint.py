@@ -212,11 +212,14 @@ def postprocess_ast(ast: Node):
     return constraints
 
 
-# # unpacked = unpack_shorthands('a (b b c), (2 c) -> a 2')
+# unpacked = unpack_shorthands('a (b b c), (2 c) -> a 2')
 # # unpacked = unpack_shorthands('b ((n p) (n p)) c d=c, b p*p*d*c h, h[g k], h[i k] -> b (n^2 g+i) k')
-# unpacked = unpack_shorthands('b ((n p) (n p)) c d=c, b p*p*d*c h, h g k, i (g k) -> b (n^2 g+i) k')
+# # unpacked = unpack_shorthands('b ((n p) (n p)) c d=c, b p*p*d*c h, h g k, i (g k) -> b (n^2 g+i) k')
 # ast = make_expr(expr.parse_string(unpacked).as_list())
 # constr = postprocess_ast(ast)
+# print(unpacked)
+# print(ast)
+# print(constr)
 
 # b, p, d, c, h, i, k, n, g = map(Symbol, 'bpdchikng')
 # C = Constant
