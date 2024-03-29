@@ -1,4 +1,4 @@
-"""Elementwise operations, for use in combination with reduction operations."""
+"""Operations that combine arrays."""
 
 from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
@@ -8,9 +8,8 @@ import array_api_compat
 from eins.common_types import Array
 
 
-class ElementwiseOp(metaclass=ABCMeta):
-    """Elementwise operation on scalars that can map to arrays of any shape.
-    Signature *arr -> *arr."""
+class Combination(metaclass=ABCMeta):
+    """Operation to combine array values together. Commutative, associative function of signature R x R -> R."""
 
     @classmethod
     @abstractmethod
@@ -21,53 +20,30 @@ class ElementwiseOp(metaclass=ABCMeta):
         raise NotImplementedError
 
     @abstractmethod
-    def __call__(self, arr: Array) -> Array:
-        """Applies the function elementwise."""
+    def __call__(self, *arrs: Array) -> Array:
+        """Applies the function to the inputs, returning a single output."""
         raise NotImplementedError
 
 
 # https://data-apis.org/array-api/latest/API_specification/elementwise_functions.html
 
-# Every method without another argument that returns a number.
-ARRAY_ELEMWISE_OPS = [
-    'abs',
-    'acos',
-    'acosh',
-    'asin',
-    'asinh',
-    'atan',
-    'atanh',
-    'bitwise_invert',
-    'ceil',
-    'conj',
-    'cos',
-    'cosh',
-    'exp',
-    'expm1',
-    'floor',
-    'imag',
-    'log',
-    'log1p',
-    'log2',
-    'log10',
-    'negative',
-    'positive',
-    'real',
-    'round',
-    'sign',
-    'sin',
-    'sinh',
-    'square',
-    'sqrt',
-    'tan',
-    'tanh',
-    'trunc',
+# Must be commutative, associative, R x R -> R
+ARRAY_COMBINE_OPS = [
+    'add',
+    'hypot',
+    'logaddexp',
+    'maximum',
+    'minimum',
+    'multiply',
+    'bitwise_xor',
+    'bitwise_and',
+    'bitwise_or',
 ]
 
 
 @dataclass(frozen=True, unsafe_hash=True)
-class ArrayElementwiseOp(ElementwiseOp):
-    """Elementwise operation defined in Array API."""
+class ArrayCombination(Combination):
+    """Combination operation defined in Array API."""
 
     func_name: str
 
@@ -76,20 +52,29 @@ class ArrayElementwiseOp(ElementwiseOp):
 
     @classmethod
     def parse(cls, name: str):
-        if name.lower().strip() in ARRAY_ELEMWISE_OPS:
+        if name.lower().strip() in ARRAY_COMBINE_OPS:
             return cls(name.lower().strip())
         else:
             return None
 
-    def __call__(self, arr: Array) -> Array:
+    def __call__(self, *arrs: Array) -> Array:
+        if len(arrs) == 0:
+            msg = 'Cannot combine empty list of arrays'
+            raise ValueError(msg)
+
         try:
+            arr = arrs[0]
             xp = array_api_compat.get_namespace(arr)
             if hasattr(xp, self.func_name):
                 func = getattr(xp, self.func_name)
-                return func(arr)
         except TypeError:
             if hasattr(arr, self.func_name):
-                func = getattr(arr, self.func_name)()
+                func = lambda x, y: getattr(x, self.func_name)(y)  # noqa: E731
             else:
                 msg = f'Name {self.func_name} not a valid function for array of type {type(arr)}'
                 raise ValueError(msg) from None
+
+        out = arrs[0]
+        for other in arrs[1:]:
+            out = func(out, other)
+        return out

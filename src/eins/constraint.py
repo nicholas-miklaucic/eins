@@ -4,6 +4,8 @@ from typing import Mapping, Optional, Union
 
 from eins.parsing import Constant, Expr, Node, Symbol, expr, flatten, make_expr, unpack_shorthands
 
+MAX_STEPS = 100
+
 
 class Constraints:
     def __init__(self):
@@ -119,7 +121,13 @@ class Constraints:
         lhs_val = self.value_of(lhs)
         rhs_val = self.value_of(rhs)
         if lhs_val is not None and rhs_val is not None:
-            assert lhs_val == rhs_val
+            if lhs_val != rhs_val:
+                msg = f"""Incompatible shapes given.
+The operation requires that {lhs} = {rhs}, but the deduced values of {lhs_val} and {rhs_val} are not equal.
+
+Deduced values:
+""" + str(self.known_vars)
+                raise ValueError(msg)
             return []
         elif lhs_val is not None:
             return self.reduce_eqn(rhs, lhs)
@@ -142,16 +150,29 @@ class Constraints:
                 if len(unknowns) == 1:
                     self.fill_in({unknowns[0]: new_rhs})
                     return []
-                elif len(set(unknowns)) == 1:
-                    # special case: we can solve (n n) = 100, for example
-                    self.fill_in({unknowns[0]: log[lhs.op](new_rhs, len(unknowns))})
-                    return []
                 else:
-                    # even if we could solve, say, (n+4 n+4 p) = 75 as n=1, p=3, assuming n is natural, we don't
-                    # want to. That's a recipe for subtle data breaking later, in a way that is very hard to defend
-                    # against. You suddenly go from having 3 channels to 4, and now eins assumes 1 channel and twice
-                    # the input size!
-                    return [(Expr(lhs.op, unknowns), new_rhs)]
+                    # (n n) = 100 gets preprocessed to (n n-2) = 100, n-2 = n
+
+                    # we want to reduce this down to (n n) so it gets recognized as solvable
+                    reduced_unknowns = []
+                    for unk in unknowns:
+                        for eq_lhs, eq_rhs in self.equations:
+                            if unk == eq_lhs:
+                                reduced_unknowns.append(eq_rhs)
+                                break
+                        else:
+                            reduced_unknowns.append(unk)
+
+                    if len(set(reduced_unknowns)) == 1:
+                        # special case: we can solve (n n) = 100, for example
+                        self.fill_in({reduced_unknowns[0]: log[lhs.op](new_rhs, len(unknowns))})
+                        return []
+                    else:
+                        # even if we could solve, say, (n+4 n+4 p) = 75 as n=1, p=3, assuming n is natural, we don't
+                        # want to. That's a recipe for subtle data breaking later, in a way that is very hard to defend
+                        # against. You suddenly go from having 3 channels to 4, and now eins assumes 1 channel and twice
+                        # the input size!
+                        return [(Expr(lhs.op, unknowns), new_rhs)]
             else:
                 return [(Expr(lhs.op, unknowns), new_rhs)]
         elif isinstance(lhs, Symbol):
@@ -161,7 +182,9 @@ class Constraints:
             return []
 
     def solve(self):
-        while self.free_vars:
+        step = 0
+        while self.free_vars and step < MAX_STEPS:
+            step += 1
             new_equations = []
             for eqn in self.equations:
                 new_equations.extend(self.reduce_eqn(*eqn))
@@ -170,6 +193,10 @@ class Constraints:
                 break
             else:
                 self.equations = new_equations
+
+        if step == MAX_STEPS:
+            msg = f'Solution failed!\n{self}'
+            raise ValueError(msg)
 
 
 def postprocess_ast(ast: Node):
@@ -185,26 +212,27 @@ def postprocess_ast(ast: Node):
     return constraints
 
 
-# unpacked = unpack_shorthands('a (b b c), (2 c) -> a 2')
-unpacked = unpack_shorthands('b ((n p) (n p)) c d=c, b p*p*d*c h, h[g k], h[i k] -> b (n^2 g+i) k')
-ast = make_expr(expr.parse_string(unpacked).as_list())
-constr = postprocess_ast(ast)
+# # unpacked = unpack_shorthands('a (b b c), (2 c) -> a 2')
+# # unpacked = unpack_shorthands('b ((n p) (n p)) c d=c, b p*p*d*c h, h[g k], h[i k] -> b (n^2 g+i) k')
+# unpacked = unpack_shorthands('b ((n p) (n p)) c d=c, b p*p*d*c h, h g k, i (g k) -> b (n^2 g+i) k')
+# ast = make_expr(expr.parse_string(unpacked).as_list())
+# constr = postprocess_ast(ast)
 
-b, p, d, c, h, i, k, n, g = map(Symbol, 'bpdchikng')
-C = Constant
+# b, p, d, c, h, i, k, n, g = map(Symbol, 'bpdchikng')
+# C = Constant
 
-# 13 100 4 4, 13 64 3, 7 8, 9 8
+# # 13 100 4 4, 13 64 3, 7 8, 9 8
 
-constr.add_constraint(b, 13)
-constr.add_constraint(Expr('*', [n, p, n, p]), Constant(100))
-constr.add_constraint(c, 4)
-constr.add_constraint(d, 4)
-constr.add_constraint(Expr('*', [p, p, d, c]), Constant(64))
-constr.add_constraint(h, 3)
-constr.add_constraint(g, 7)
-constr.add_constraint(k, 8)
-constr.add_constraint(i, 9)
-constr.add_variables(list('bpdchikng'))
-constr.add_variables(['n-2', 'p-2'])
-constr.solve()
-print(constr)
+# constr.add_constraint(b, 13)
+# constr.add_constraint(Expr('*', [n, p, n, p]), Constant(100))
+# constr.add_constraint(c, 4)
+# constr.add_constraint(d, 4)
+# constr.add_constraint(Expr('*', [p, p, d, c]), Constant(64))
+# constr.add_constraint(h, 3)
+# constr.add_constraint(g, 7)
+# constr.add_constraint(k, 8)
+# constr.add_constraint(i, 9)
+# constr.add_variables(list('bpdchikng'))
+# constr.add_variables(['n-2', 'p-2'])
+# constr.solve()
+# print(constr)

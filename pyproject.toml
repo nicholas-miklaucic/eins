@@ -24,7 +24,7 @@ classifiers = [
   "Programming Language :: Python :: Implementation :: CPython",
   "Programming Language :: Python :: Implementation :: PyPy",
 ]
-dependencies = ["numpy >= 1.23", "pyparsing"]
+dependencies = ["array-api-compat", "pyparsing"]
 
 [project.urls]
 Documentation = "https://github.com/nicholas-miklaucic/eins#readme"
@@ -35,7 +35,7 @@ Source = "https://github.com/nicholas-miklaucic/eins"
 path = "src/eins/__about__.py"
 
 [tool.hatch.envs.default]
-dependencies = ["coverage[toml]>=6.5", "pytest"]
+dependencies = ["coverage[toml]>=6.5", "pytest", "numpy"]
 [tool.hatch.envs.default.scripts]
 test = "pytest {args:tests}"
 test-cov = "coverage run -m pytest {args:tests}"

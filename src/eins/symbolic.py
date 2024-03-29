@@ -7,12 +7,13 @@ from collections import defaultdict
 from copy import deepcopy
 from dataclasses import dataclass
 from itertools import chain
-from typing import Mapping, Sequence, Set, Tuple, Union
+from typing import Mapping, Sequence, Union
 
+from eins.combination import ArrayCombination, Combination
 from eins.constraint import Constraints, postprocess_ast
 from eins.parsing import Constant, Expr, Node, Symbol, make_expr, unpack_shorthands
 from eins.parsing import expr as expr_parser
-from eins.reduction import Array, Prod, Reduction, Sum
+from eins.reduction import ArrayReduction, Reduction
 
 
 class Tensor:
@@ -78,7 +79,7 @@ class ShapeOp(metaclass=ABCMeta):
 class Reshape(ShapeOp):
     new_shape: tuple[Node]
 
-    def apply(self, _tensor: Sequence[Tensor]) -> Sequence[Tensor]:
+    def apply(self, _tensors: Sequence[Tensor]) -> Sequence[Tensor]:
         return [Tensor(Expr(' ', list(self.new_shape)))]
 
 
@@ -219,13 +220,20 @@ def reverse_graph(root: Tensor):
     if not root.children:
         return root
 
+    if len(root.children) > 1:
+        raise ValueError
+
     op, children = root.children[0]
     if isinstance(op, Reshape):
-        return Reshape(root.axes)(reverse_graph(children[0]))
+        return Reshape(root.axes)([reverse_graph(children[0])])[0]
     elif isinstance(op, Split):
-        return Concat(op.axis_num)([reverse_graph(child) for child in children])
+        return Concat(op.axis_num)([reverse_graph(child) for child in children])[0]
     else:
         raise ValueError
+
+
+DEFAULT_COMBINE = ArrayCombination('multiply')
+DEFAULT_REDUCE = ArrayReduction('sum')
 
 
 class Program:
@@ -233,8 +241,8 @@ class Program:
         self,
         expr: Expr,
         constr: Constraints,
-        combine: Reduction = Prod,
-        reduce: Reduction | Mapping[str, Reduction] = Sum,
+        combine: Combination = DEFAULT_COMBINE,
+        reduce: Reduction | Mapping[str, Reduction] = DEFAULT_REDUCE,
     ):
         assert expr.op == '->' and len(expr.children) == 2
         lhs, rhs = expr.children
@@ -298,10 +306,17 @@ class Program:
 
         reverse_graph(self.orig_sink)
 
+        # print(self.outputs)
+        # print(self.sinks)
         for out in self.outputs:
             for sink in self.sinks:
                 if out.is_same_shape(sink):
                     out.children = sink.children
+                    for op, children in out.children:
+                        for child in children:
+                            for i, parent in enumerate(child.parents):
+                                if id(parent) == id(sink):
+                                    child.parents[i] = out
 
     @ft.lru_cache
     @staticmethod
