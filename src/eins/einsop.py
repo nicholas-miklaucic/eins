@@ -1,7 +1,7 @@
 """User-facing API."""
 
 from collections import defaultdict
-from typing import Callable, Literal, Mapping, Sequence, Union
+from typing import Callable, Mapping, Sequence, Union
 
 from eins.combination import (
     ARRAY_COMBINE_OPS,
@@ -133,34 +133,38 @@ class EinsOp:
         A tensor operation that takes in tensors of the given shapes and outputs a tensor of the given shape. Has a
         generic, powerful shape description language that supports the majority of tensor operations.
 
-        :param op: The description of the operation. For example, `a b, b c -> a c` performs matrix multiplication, and
-          `batch (size size) channels -> batch size size channels` unpacks a batch of square images.
+        Parameters
+        ----------
+        op:
+            The description of the operation. For example, `'a b, b c -> a c'` performs matrix multiplication, and
+            `'batch (size size) channels -> batch size size channels'` unpacks a batch of square images.
 
-        :param reduce: Describes how axes that appear in the input but not the output are eliminated. The default is
-          `'sum'`, like in `einsum`. Common alternatives are `'mean'`, `'std'`, `'max'`, and `'min'`. This can also be a
-          combine operation, which is reduced in the functional programming sense. For example, `'add'` would perform
-          the same reduction as `sum` but in a less efficient loop.
+        reduce: str, Reduction, function with signature func(Array, axis: int) -> Array
+            Describes how axes that appear in the input but not the output are eliminated. The default is `'sum'`, like
+            in `einsum`. Common alternatives are `'mean'`, `'std'`, `'max'`, and `'min'`. This can also be a combine
+            operation, which is reduced in the functional programming sense. For example, `'add'` would perform the same
+            reduction as `'sum'` but in a less efficient loop. You can also pass in a function: it should be callable as
+            `func(arr, axis=0)` and return an array with that axis eliminated. `eins` makes no guarantees about the
+            order reductions are performed.
 
-          You can also pass in a function: it should be callable as `func(arr, axis=0)` and return an array with that
-          axis eliminated. `eins` makes no guarantees about the order reductions are performed
+            For even more flexibility, this can be any of the previous inputs "sandwiched" by elementwise operations.
+            For example, `('log', 'sum', 'exp')` would be equivalent to `logsumexp`. Note that passing in custom
+            callables here is not allowed, because `eins` doesn't know whether a user-supplied function is an
+            elementwise operation or not. Use a lambda instead.
 
-          For even more flexibility, this can be any of the previous inputs "sandwiched" by elementwise operations. For
-          example, `('log', 'sum', 'exp')` would be equivalent to `logsumexp`. Note that passing in custom callables
-          here is not allowed, because `eins` doesn't know whether a user-supplied function is an elementwise operation
-          or not. Use a lambda instead.
+            The final option is to pass in a mapping from axes to any of the previous reduction operation
+            specifications. `eins` makes no guarantees about the order reductions are performed unless explicitly
+            indicated, so be careful. `'a b c -> a', reduce={'b': 'max', 'c': 'min'}` has two meanings, depending on
+            which happens first. Instead, you can pass `'a b c -> a b -> a'`, which forces a specific order.
 
-          The final option is to pass in a mapping from axes to any of the previous reduction operation specifications.
-          `eins` makes no guarantees about the order reductions are performed unless explicitly indicated, so be
-          careful. `'a b c -> a', reduce={'b': 'max', 'c': 'min'}` has two meanings, depending on which happens first.
-          Instead, you can pass `'a b c -> a b -> a'`, which forces a specific order.
+        combine:
+            Describes how the elements of different input tensors are combined. The default is `'multiply'`, which is
+            what `einsum` does. This can be a list of elementwise operations and a single combination operation, like
+            reduce: `('log', 'add', 'exp')` would be a less efficient equivalent operation to `'logaddexp'`.
 
-        :param combine: Describes how the elements of different input tensors are combined. The default is `'multiply'`,
-          which is what `einsum` does. This can be a list of elementwise operations and a single combination operation,
-          like reduce: `('log', 'add', 'exp')` would be a less efficient equivalent operation to `'logaddexp'`.
-
-          A custom callable should be callable as `func(arr1, arr2)` and return an array of the same shape as the two
-          inputs. `eins` makes no guarantees about the order combinations are performed, so this function should be
-          commutative and associative.
+            A custom callable should be callable as `func(arr1, arr2)` and return an array of the same shape as the two
+            inputs. `eins` makes no guarantees about the order combinations are performed, so this function should be
+            commutative and associative.
         """
         if '->' not in op:
             msg = f'Einsop "{op}" has no "->", which is required'
@@ -187,11 +191,20 @@ class EinsOp:
         """
         Apply the operation to the given tensors, returning the output tensor.
 
+        Parameters
+        ----------
+        tensors: any number of Array objects
+            The tensors to apply the operation to. Should be all the same type: numpy, torch, jax, cupy, and dask are
+            all supported. The order matches the order of the input arguments.
 
-        :param tensors: The tensors to apply the operation to. Should be all the same type: numpy, torch, jax, cupy, and
-          dask are all supported. The order matches the order of the input arguments.
+        Returns
+        -------
+        The result of the operation.
 
-        :return: The result of the operation.
+        Raises
+        ------
+        ValueError:
+            if the wrong number of tensors is passed in.
         """
         if len(tensors) != len(self.program.sources):
             msg = f'Expected {len(self.program.sources)} tensors, got {len(tensors)}'
@@ -274,20 +287,25 @@ class EinsOp:
 
 def einsop(op_str: str, *tensors: Array, reduce: ReduceArg = 'sum', combine: CombineArg = 'multiply') -> Array:
     """
-    A functional version of `EinsOp` that does not allow for inspection or caching. This exists mainly as a bridge
-    between that interface and the familiar one used by einops. Use `EinsOp` instead for serious development.
+    A functional version of [EinsOp] that does not allow for inspection or caching.
 
-    For full documentation, consult the `EinsOp` class.
+    This exists mainly as a bridge between that interface and the familiar one used by einops. Use [EinsOp] instead for
+    serious development. That is also where the arguments are documented in more detail.
 
-    :param op_str: The einops operation string.
+    Parameters
+    ----------
+    op_str:
+        The einops operation string.
+    tensors:
+        The tensors to apply the operation to. Should be all the same type, and support the Array API.
+    reduce:
+        The reduction operation to apply to the outputs of the operation. Defaults to `'sum'`.
+    combine:
+        The combination operation to apply to the outputs of the operation. Defaults to `'multiply'`.
 
-    :param tensors: The tensors to apply the operation to. Should be all the same type, and support the Array API.
-
-    :param reduce: The reduction operation to apply to the outputs of the operation. Defaults to `'sum'`.
-
-    :param combine: The combination operation to apply to the outputs of the operation. Defaults to `'multiply'`.
-
-    :returns: The result of the EinsOp.
+    Returns
+    -------
+    The result of the EinsOp.
     """
     op = EinsOp(op_str, reduce=reduce, combine=combine)
     return op(*tensors)

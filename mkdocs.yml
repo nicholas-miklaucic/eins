@@ -1,0 +1,26 @@
+site_name: Eins
+
+nav:
+  - Home: index.md
+  - API: $api/eins.***
+
+plugins:
+- search
+- mkapi
+
+theme:
+  name: material
+  features:
+    - content.tooltips
+    - navigation.expand
+    - navigation.indexes
+    - navigation.sections
+    - navigation.tabs
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.superfences
+  - pymdownx.inlinehilite:
+      style_plain_text: 'python'
+

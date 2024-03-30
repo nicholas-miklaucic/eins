@@ -3,5 +3,3 @@
 # SPDX-License-Identifier: MIT
 
 from eins.einsop import EinsOp, einsop
-
-__all__ = ['EinsOp', 'einsop']
