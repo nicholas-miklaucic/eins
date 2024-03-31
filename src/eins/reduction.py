@@ -1,14 +1,17 @@
 """Reduction operations."""
 
+import typing
 import warnings
 from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
 from functools import reduce
+from math import isnan
 from typing import Callable, Literal, Sequence, Union
 
 from eins.combination import Combination, parse_combination
 from eins.common_types import Array
 from eins.elementwise import ElementwiseOp
+from eins.transformation import Transformation
 from eins.utils import array_backend
 
 
@@ -31,9 +34,9 @@ class Reduction(metaclass=ABCMeta):
 
 
 # https://data-apis.org/array-api/latest/API_specification/statistical_functions.html
-ARRAY_REDUCE_OPS = ['max', 'mean', 'min', 'prod', 'std', 'sum', 'var']
+ArrayReductionLiteral = Literal['max', 'mean', 'min', 'prod', 'std', 'sum', 'var']
 
-ReductionLiteral = Literal['max', 'mean', 'min', 'prod', 'std', 'sum', 'var']
+ARRAY_REDUCE_OPS = [str(x) for x in typing.get_args(ArrayReductionLiteral)]
 
 
 @dataclass(frozen=True, unsafe_hash=True)
@@ -47,8 +50,8 @@ class ArrayReduction(Reduction):
 
     @classmethod
     def parse(cls, name: str):
-        if name.lower().strip() in ARRAY_REDUCE_OPS:
-            return cls(name.lower().strip())
+        if name in ARRAY_REDUCE_OPS:
+            return cls(name)
         else:
             return None
 
@@ -96,19 +99,92 @@ class Fold(Reduction):
 
     def __call__(self, arr: Array, axis: int = 0):
         xp = array_backend(arr)
-        if xp is not None and hasattr(xp, 'unstack'):
+        if xp is not None:
             slices = xp.unstack(arr, axis=axis)
             return reduce(self.combination, slices)
         else:
             msg = f'Cannot fold over non-Array {arr} of type {type(arr)}'
-            raise ValueError(msg) from None
+            raise ValueError(msg)
+
+
+@dataclass(frozen=True, unsafe_hash=True)
+class Norm(Reduction):
+    """p-norm: defaults to L2 norm.
+
+    Parses a string of the form `{p}-norm`, such as `2-norm` for the Euclidean norm. Also supports a prefix of `L` or
+    `l`, so you can write `l1-norm` instead of `1-norm` if you prefer. `norm` is special-cased to the Euclidean norm.
+
+    Supports the [np.linalg.norm](https://numpy.org/doc/stable/reference/generated/numpy.linalg.norm.html) vector norm
+    options: `inf-norm` is `max(abs(x))`, `-inf-norm` is `min(abs(x))`, and `0-norm` is `sum(x != 0)`."""
+
+    power: float = 2
+
+    @classmethod
+    def parse(cls, name: str):
+        if name == 'norm':
+            return cls()
+
+        if name and name[0] in ('L', 'l'):
+            name = name[1:]
+        if name.endswith('-norm'):
+            power = name.removesuffix('-norm')
+            try:
+                power = float(power)
+                if not isnan(power):
+                    return cls(float(power))
+            except ValueError:
+                return None
+        return None
+
+    def __call__(self, arr: Array, axis: int = 0):
+        xp = array_backend(arr)
+        if xp is not None:
+            if self.power == 0:
+                return xp.sum(xp.abs(arr) != 0, axis=axis)
+            elif self.power == float('inf'):
+                return xp.max(xp.abs(arr), axis=axis)
+            elif self.power == float('-inf'):
+                return xp.min(xp.abs(arr), axis=axis)
+            else:
+                return xp.pow(xp.sum(xp.abs(arr) ** self.power, axis=axis), 1 / self.power)
+        else:
+            msg = f'Cannot compute reduction for non-Array {arr} of type {type(arr)}'
+            raise ValueError(msg)
+
+
+# we can't enumerate every valid norm string, but we can special-case the common ones
+NormLiteral = Literal['norm', 'l2-norm', 'l1-norm', 'inf-norm']
+
+
+class Range(Reduction):
+    """Computes the range of an array along an axis. Equivalent to np.ptp."""
+
+    @classmethod
+    def parse(cls, name: str):
+        if name in ('range', 'ptp'):
+            return cls()
+        else:
+            return None
+
+    def __call__(self, arr: Array, axis: int = 0):
+        xp = array_backend(arr)
+        if xp is not None:
+            return xp.max(arr, axis=axis) - xp.min(arr, axis=axis)
+        else:
+            msg = f'Cannot compute reduction for non-Array {arr} of type {type(arr)}'
+            raise ValueError(msg)
+
+
+RangeLiteral = Literal['range', 'ptp']
 
 
 @dataclass(frozen=True, unsafe_hash=True)
 class CompositeReduction(Reduction):
-    """Reduction using elementwise operations in addition to a reduction."""
+    """Reduction using elementwise operations and transformations in addition to a reduction.
 
-    ops: Sequence[Union[ElementwiseOp, Reduction]]
+    Functions are applied from right-to-left. For example, `('log', 'sum', 'exp')` computes `log(sum(exp(x)))`."""
+
+    ops: Sequence[Union[ElementwiseOp, Transformation, Reduction]]
 
     @classmethod
     def parse(cls, _name: str):
@@ -120,12 +196,14 @@ class CompositeReduction(Reduction):
         out = arr
         # must reduce exactly once
         reductions = 0
-        for op in self.ops:
+        for op in self.ops[::-1]:
             if isinstance(op, Reduction):
                 reductions += 1
                 if reductions > 1:
                     msg = f'{self} has more than one reduction operation'
                     raise ValueError(msg)
+                out = op(out, axis=axis)
+            elif isinstance(op, Transformation):
                 out = op(out, axis=axis)
             else:
                 out = op(out)
@@ -138,7 +216,9 @@ class CompositeReduction(Reduction):
 
 @dataclass
 class UserReduction(Reduction):
-    """Reduction using a user-defined function."""
+    """Reduction using a user-defined function.
+
+    func must take in an array and an axis argument, returning an array with that axis removed."""
 
     func: Callable
 
@@ -147,21 +227,12 @@ class UserReduction(Reduction):
 
 
 def parse_reduction(name: str) -> Reduction:
-    arr_parse = ArrayReduction.parse(name)
-    if arr_parse is not None:
-        return arr_parse
-
-    fold_parse = Fold.parse(name)
-    if fold_parse is not None:
-        return fold_parse
+    for cls in (ArrayReduction, Fold, Norm, Range):
+        parse = cls.parse(name)
+        if parse is not None:
+            return parse
 
     return None
 
 
-# todo:
-# p-norm
-# p-deviance
-# logsumexp
-# softmax
-# median
-# quantile
+ReductionLiteral = Union[ArrayReductionLiteral, NormLiteral, RangeLiteral]

@@ -1,5 +1,6 @@
 """Elementwise operations, for use in combination with reduction operations."""
 
+import typing
 from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
 from typing import Literal
@@ -26,9 +27,9 @@ class ElementwiseOp(metaclass=ABCMeta):
 
 
 # https://data-apis.org/array-api/latest/API_specification/elementwise_functions.html
+# Every method without a second argument.
 
-# Every method without another argument that returns a number.
-ARRAY_ELEMWISE_OPS = [
+ArrayElementwiseLiteral = Literal[
     'abs',
     'acos',
     'acosh',
@@ -63,40 +64,7 @@ ARRAY_ELEMWISE_OPS = [
     'trunc',
 ]
 
-ElementwiseLiteral = Literal[
-    'abs',
-    'acos',
-    'acosh',
-    'asin',
-    'asinh',
-    'atan',
-    'atanh',
-    'bitwise_invert',
-    'ceil',
-    'conj',
-    'cos',
-    'cosh',
-    'exp',
-    'expm1',
-    'floor',
-    'imag',
-    'log',
-    'log1p',
-    'log2',
-    'log10',
-    'negative',
-    'positive',
-    'real',
-    'round',
-    'sign',
-    'sin',
-    'sinh',
-    'square',
-    'sqrt',
-    'tan',
-    'tanh',
-    'trunc',
-]
+ARRAY_ELEMWISE_OPS = typing.get_args(ArrayElementwiseLiteral)
 
 
 @dataclass(frozen=True, unsafe_hash=True)
@@ -133,3 +101,6 @@ def parse_elementwise(name: str) -> ElementwiseOp:
         return arr_parse
     else:
         return None
+
+
+ElementwiseLiteral = ArrayElementwiseLiteral

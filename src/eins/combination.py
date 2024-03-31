@@ -1,10 +1,9 @@
 """Operations that combine arrays."""
 
+import typing
 from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
 from typing import Callable, Literal, Sequence, Union
-
-import array_api_compat
 
 from eins.common_types import Array
 from eins.elementwise import ElementwiseOp
@@ -15,7 +14,7 @@ class Combination(metaclass=ABCMeta):
     """Operation to combine array values together. Commutative, associative function of signature R x R -> R."""
 
     @classmethod
-    def parse(cls, name: str):
+    def parse(cls, _name: str):
         """Attempts to construct an instance of the operation from the string name.
         If unsuccessful, returns None. Used for shorthand syntax, like passing in
         'sqrt' instead of the named Sqrt op."""
@@ -28,23 +27,13 @@ class Combination(metaclass=ABCMeta):
 
 
 # https://data-apis.org/array-api/latest/API_specification/elementwise_functions.html
-
 # Must be commutative, associative, R x R -> R
-ARRAY_COMBINE_OPS = [
-    'add',
-    'hypot',
-    'logaddexp',
-    'maximum',
-    'minimum',
-    'multiply',
-    'bitwise_xor',
-    'bitwise_and',
-    'bitwise_or',
-]
 
-CombineLiteral = Literal[
+ArrayCombineLiteral = Literal[
     'add', 'hypot', 'logaddexp', 'maximum', 'minimum', 'multiply', 'bitwise_xor', 'bitwise_and', 'bitwise_or'
 ]
+
+ARRAY_COMBINE_OPS = [str(x) for x in typing.get_args(ArrayCombineLiteral)]
 
 
 @dataclass(frozen=True, unsafe_hash=True)
@@ -112,6 +101,9 @@ class CompositeCombination(Combination):
             else:
                 out = [op(o) for o in out]
         return out[0]
+
+
+CombineLiteral = ArrayCombineLiteral
 
 
 def parse_combination(name: str) -> Combination:

@@ -1,6 +1,8 @@
 """User-facing API."""
 
+import typing
 from collections import defaultdict
+from itertools import chain
 from typing import Callable, Mapping, Sequence, Union
 
 from eins.combination import (
@@ -24,12 +26,14 @@ from eins.reduction import (
     parse_reduction,
 )
 from eins.symbolic import Program, Tensor
+from eins.transformation import Transformation, TransformationLiteral, parse_transformation
 
 ElementwiseKind = Union[ElementwiseLiteral, Callable, ElementwiseOp]
 ReductionKind = Union[ReductionLiteral, str, Callable, Reduction]
 CombinationKind = Union[CombineLiteral, Callable, Combination]
+TransformationKind = Union[TransformationLiteral, Transformation]
 
-GeneralReductionKind = Union[ReductionKind, Sequence[Union[ElementwiseKind, ReductionKind]]]
+GeneralReductionKind = Union[ReductionKind, Sequence[Union[ElementwiseKind, TransformationKind, ReductionKind]]]
 ReduceArg = Union[GeneralReductionKind, Mapping[str, GeneralReductionKind]]
 
 CombineArg = Union[CombinationKind, Sequence[Union[ElementwiseKind, CombinationKind]]]
@@ -50,18 +54,19 @@ def parse_reduce_arg(reduce: GeneralReductionKind) -> Reduction:
     else:
         ops = []
         for op in reduce:
-            if isinstance(op, (ElementwiseOp, Reduction)):
+            if isinstance(op, (ElementwiseOp, Reduction, Transformation)):
                 ops.append(op)
                 continue
 
-            op_parse = parse_reduction(op)
-            if op_parse is not None:
-                ops.append(op_parse)
-                continue
+            did_parse = False
+            for parser in (parse_reduction, parse_elementwise, parse_transformation):
+                op_parse = parser(op)
+                if op_parse is not None:
+                    ops.append(op_parse)
+                    did_parse = True
+                    break
 
-            op_parse = parse_elementwise(op)
-            if op_parse is not None:
-                ops.append(op_parse)
+            if did_parse:
                 continue
 
             if isinstance(op, Callable):
@@ -72,8 +77,13 @@ def parse_reduce_arg(reduce: GeneralReductionKind) -> Reduction:
                 )
                 raise ValueError(msg)
 
-            msg = f'Cannot parse operation {op} in {ops}. Valid literals are: ' + ', '.join(
-                ARRAY_REDUCE_OPS + ARRAY_ELEMWISE_OPS + ARRAY_COMBINE_OPS
+            msg = f'Cannot parse operation {op} in {ops}. Valid literals are: ' + (
+                '\n'.join(
+                    [
+                        ', '.join(map(str, chain.from_iterable(map(typing.get_args, typing.get_args(ops)))))
+                        for ops in (ReductionLiteral, ElementwiseLiteral, TransformationLiteral, CombineLiteral)
+                    ]
+                )
             )
             raise ValueError(msg)
 
@@ -117,8 +127,8 @@ def parse_combine_arg(combine: CombineArg) -> Combination:
                 )
                 raise ValueError(msg)
 
-            msg = f'Cannot parse operation {op} in {ops}. Valid literals are: ' + ', '.join(
-                ARRAY_REDUCE_OPS + ARRAY_ELEMWISE_OPS + ARRAY_COMBINE_OPS
+            msg = f'Cannot parse operation {op} in {ops}. Valid literals are: ' + (
+                '\n'.join([', '.join(typing.get_args(ops)) for ops in (CombineLiteral, ElementwiseLiteral)])
             )
             raise ValueError(msg)
 

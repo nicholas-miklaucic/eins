@@ -50,3 +50,8 @@ patches = einsop(
     'batch (I patch) (I patch) channels, (patch patch channels) embed_dim -> batch (I I) embed_dim', images, kernel
 )
 patches = einsop('batch (I I) embed_dim, embed_dim -> batch (I I) embed_dim', patches, bias, combine='add')
+
+
+x = randn(4, 2)
+y = einsop('a b -> a', x, reduce=('mean', 'cumprod'))
+test_close(y, (x[:, 0] + x[:, :2].sum(axis=1)) / 2)
