@@ -224,7 +224,7 @@ class EinsOp:
 
         abstract = {}
         concrete = {}
-        frontier = {}
+        frontier = defaultdict(list)
 
         def fill(src: Tensor, arr, frontier=frontier):
             concrete[id(src)] = arr
@@ -240,9 +240,9 @@ class EinsOp:
                     child = children[0]
                     key = tuple(map(id, child.parents))
                     if key not in frontier:
-                        frontier[key] = (op, (child,))
+                        frontier[key].append((op, (child,)))
                 else:
-                    frontier[(id(src),)] = (op, tuple(children))
+                    frontier[(id(src),)].append((op, tuple(children)))
             return False
 
         for src, arr in zip(self.program.sources, tensors):
@@ -259,17 +259,17 @@ class EinsOp:
             changed = False
             for input_ids in list(frontier.keys()):
                 if all(input_id in concrete for input_id in input_ids):
-                    op, outputs = frontier[input_ids]
-                    x = [concrete[input_id] for input_id in input_ids]
-                    i = [abstract[input_id] for input_id in input_ids]
-                    o = list(outputs)
-                    concrete_outputs = backend.do(x, op, i, o)
-                    # print('co', concrete_outputs)
-                    for concrete_out, out in zip(concrete_outputs, outputs):
-                        if fill(out, concrete_out, frontier):
-                            return concrete_out
+                    for op, outputs in frontier[input_ids]:
+                        x = [concrete[input_id] for input_id in input_ids]
+                        i = [abstract[input_id] for input_id in input_ids]
+                        o = list(outputs)
+                        concrete_outputs = backend.do(x, op, i, o)
+                        # print('co', concrete_outputs)
+                        for concrete_out, out in zip(concrete_outputs, outputs):
+                            if fill(out, concrete_out, frontier):
+                                return concrete_out
 
-                    changed = True
+                        changed = True
                     del frontier[input_ids]
                 else:
                     pass
@@ -281,6 +281,19 @@ class EinsOp:
             print({k: v.shape for k, v in concrete.items()})
             print(abstract)
             print(list(map(id, self.program.sinks)))
+            for k, outs in frontier.items():
+                for op, outputs in outs:
+                    print('---')
+                    missing = list(outputs)
+                    printed = set()
+                    while missing:
+                        m = missing.pop()
+                        if id(m) in printed:
+                            continue
+                        print(f'Missing {m} ({id(m)})')
+                        printed.add(id(m))
+                        missing.extend([p for p in m.parents if id(p) not in concrete])
+
             raise ValueError(msg)
         return None
 

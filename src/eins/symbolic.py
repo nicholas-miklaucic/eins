@@ -240,6 +240,21 @@ DEFAULT_COMBINE = ArrayCombination('multiply')
 DEFAULT_REDUCE = ArrayReduction('sum')
 
 
+def combine_mismatched(combine: Combination, tensors: Sequence[Tensor]) -> Tensor:
+    """Combines tensors together, broadcasting and transposing as needed. Assumes tensors are in normal form."""
+    out = tensors[0]
+    for t in tensors[1:]:
+        new_axes = out.axes_list() + [ax for ax in t.axes_list() if ax not in out.axes_list()]
+        axs = t.axes_list()
+        perm = tuple(sorted(range(len(axs)), key=lambda x: new_axes.index(axs[x])))
+        transposed_t = Transpose(perm)(t)[0]
+        new_ax_op = ExpandTo(tuple(map(Symbol, new_axes)))
+        expanded_t = Program.apply_op(new_ax_op, transposed_t)[0]
+        expanded_out = Program.apply_op(new_ax_op, out)[0]
+        out = Program.apply_op(combine, (expanded_out, expanded_t))[0]
+    return out
+
+
 class Program:
     def __init__(
         self,
@@ -247,7 +262,9 @@ class Program:
         constr: Constraints,
         combine: Combination = DEFAULT_COMBINE,
         reduce: Reduction | Mapping[str, Reduction] = DEFAULT_REDUCE,
+        reduce_early: bool = True,
     ):
+        self.reduce_early = reduce_early
         assert expr.op == '->' and len(expr.children) == 2
         lhs, rhs = expr.children
 
@@ -298,10 +315,16 @@ class Program:
             for diff in diffs:
                 per_sink_input = []
                 for curr in self.current:
-                    if diff <= set(curr.axes_list()) or not (all_splits <= set(curr.axes_list())):
+                    # TODO needs to be more robust for multiple splits?
+                    # it can't be on the "wrong side" of a single split
+                    # a c, a d, b c, b d -> a+b c+d
+                    curr_ax = set(curr.axes_list())
+                    if curr_ax.isdisjoint(all_splits - diff):
                         per_sink_input.append(curr)
                 per_sink_inputs.append(per_sink_input)
 
+            print(per_sink_inputs)
+            print(self.sinks)
             for sink_input, sink in zip(per_sink_inputs, self.sinks):
                 self.outputs.append(self.connect(sink_input, sink))
 
@@ -310,17 +333,14 @@ class Program:
 
         reverse_graph(self.orig_sink)
 
-        # print(self.outputs)
-        # print(self.sinks)
-        for out in self.outputs:
-            for sink in self.sinks:
-                if out.is_same_shape(sink):
-                    out.children = sink.children
-                    for op, children in out.children:
-                        for child in children:
-                            for i, parent in enumerate(child.parents):
-                                if id(parent) == id(sink):
-                                    child.parents[i] = out
+        for out, sink in zip(self.outputs, self.sinks):
+            assert out.is_same_shape(sink)
+            out.children = sink.children
+            for _op, children in out.children:
+                for child in children:
+                    for i, parent in enumerate(child.parents):
+                        if id(parent) == id(sink):
+                            child.parents[i] = out
 
     @ft.lru_cache
     @staticmethod
@@ -328,10 +348,10 @@ class Program:
         return op(tensors)
 
     @classmethod
-    def parse(cls, op: str):
+    def parse(cls, op: str, **kwargs):
         expr = make_expr(expr_parser.parse_string(unpack_shorthands(op)).as_list())
         constraints = postprocess_ast(expr)
-        return cls(expr, constraints)
+        return cls(expr, constraints, **kwargs)
 
     def connect(self, start: Sequence[Tensor], goal: Tensor):
         goal_axes = goal.axes_list()
@@ -349,15 +369,32 @@ class Program:
             perm = tuple(sorted(range(len(axs)), key=lambda x: start_axes.index(axs[x])))
             transposed.extend(Program.apply_op(Transpose(perm), s))
 
-        expanded = []
-        for t in transposed:
-            expanded.extend(Program.apply_op(ExpandTo(tuple(map(Symbol, start_axes))), t))
+        if self.reduce_early:
+            exp_axes = [set(exp.axes_list()) for exp in transposed]
+            for i, exp in enumerate(transposed):
+                if i == 0:
+                    combined = exp
+                else:
+                    combined = combine_mismatched(Combine(self.combine), (combined, exp))
 
-        combined = Program.apply_op(Combine(self.combine), tuple(expanded))[0]
+                in_rest = set()
+                for remaining_axes in exp_axes[i + 1 :]:
+                    in_rest |= remaining_axes
 
-        reduced = combined
-        for ax in reduce_axes:
-            reduced = Program.apply_op(Reduce(self.reduce[ax], Symbol(ax)), reduced)[0]
+                # axes in the input, to reduce, that aren't in future tensors
+                to_reduce = (reduce_axes - in_rest) & set(combined.axes_list())
+                for r_ax in to_reduce:
+                    combined = Program.apply_op(Reduce(self.reduce[r_ax], Symbol(r_ax)), combined)[0]
+            reduced = combined
+        else:
+            expanded = []
+            for t in transposed:
+                expanded.extend(Program.apply_op(ExpandTo(tuple(map(Symbol, start_axes))), t))
+            combined = Program.apply_op(Combine(self.combine), tuple(expanded))[0]
+
+            reduced = combined
+            for ax in reduce_axes:
+                reduced = Program.apply_op(Reduce(self.reduce[ax], Symbol(ax)), reduced)[0]
 
         r_axs = reduced.axes_list()
         assert set(r_axs) == set(goal_axes), f'{r_axs} != {goal_axes}'
@@ -389,7 +426,7 @@ class Program:
 
 
 # env = Program.parse('b ((n p) (n p)) c d=c, b p*p*d*c h, h[g+i k] -> b (n^2 g+i) k')
-# env = Program.parse('a b, b c -> a c')
+env = Program.parse('a b, b c -> a+c b')
 # print(env)
 
 

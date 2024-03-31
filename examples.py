@@ -44,7 +44,7 @@ test_close(z, x @ y)
 # * p * C, D) and bias D.
 kernel = randn(5 * 5 * 3, 12)
 bias = randn(12)
-images = randn(5, 55, 55, 3)
+images = randn(100, 55, 55, 3)
 
 patches = einsop(
     'batch (I patch) (I patch) channels, (patch patch channels) embed_dim -> batch (I I) embed_dim', images, kernel
