@@ -224,78 +224,41 @@ class EinsOp:
 
         abstract = {}
         concrete = {}
-        frontier = defaultdict(list)
 
-        def fill(src: Tensor, arr, frontier=frontier):
+        def fill_from(src: Tensor, arr: Array):
+            """Fills forward from the known tensor. Returns the answer, if found."""
             concrete[id(src)] = arr
             abstract[id(src)] = src
 
-            # print(src, src.children)
             if len(src.children) == 0:
-                return True
+                # we're done
+                return arr
 
             for op, children in src.children:
-                # either one-to-many or many-to-one or one-to-one
                 if len(children) == 1:
+                    # could be a many-to-one op
                     child = children[0]
-                    key = tuple(map(id, child.parents))
-                    if key not in frontier:
-                        frontier[key].append((op, (child,)))
+                    concrete_parents = [concrete.get(id(parent)) for parent in child.parents]
+                    if all(p is not None for p in concrete_parents):
+                        # we can fill in this operation
+                        result = backend.do(concrete_parents, op, child.parents, [child])[0]
+                        res = fill_from(child, result)
+                        if res is not None:
+                            return res
                 else:
-                    frontier[(id(src),)].append((op, tuple(children)))
-            return False
+                    # no many-to-many ops: we can fill in all of these
+                    child_results = backend.do([arr], op, [src], children)
+                    for child, result in zip(children, child_results):
+                        res = fill_from(child, result)
+                        if res is not None:
+                            return res
+
+            return None
 
         for src, arr in zip(self.program.sources, tensors):
-            fill(src, arr, frontier)
-
-        # alg:
-        # fill in value
-        # if any children are now ready, add them
-
-        changed = True
-        while frontier and changed:
-            # print('\n'.join([', '.join(str(abstract.get(k, '_unknown')) for k in ids) for ids in frontier.keys()]))
-            # print('-' * 20)
-            changed = False
-            for input_ids in list(frontier.keys()):
-                if all(input_id in concrete for input_id in input_ids):
-                    for op, outputs in frontier[input_ids]:
-                        x = [concrete[input_id] for input_id in input_ids]
-                        i = [abstract[input_id] for input_id in input_ids]
-                        o = list(outputs)
-                        concrete_outputs = backend.do(x, op, i, o)
-                        # print('co', concrete_outputs)
-                        for concrete_out, out in zip(concrete_outputs, outputs):
-                            if fill(out, concrete_out, frontier):
-                                return concrete_out
-
-                        changed = True
-                    del frontier[input_ids]
-                else:
-                    pass
-                    # print(input_ids, concrete.keys())
-
-        if frontier:
-            msg = 'Could not finish computation'
-            print(frontier)
-            print({k: v.shape for k, v in concrete.items()})
-            print(abstract)
-            print(list(map(id, self.program.sinks)))
-            for k, outs in frontier.items():
-                for op, outputs in outs:
-                    print('---')
-                    missing = list(outputs)
-                    printed = set()
-                    while missing:
-                        m = missing.pop()
-                        if id(m) in printed:
-                            continue
-                        print(f'Missing {m} ({id(m)})')
-                        printed.add(id(m))
-                        missing.extend([p for p in m.parents if id(p) not in concrete])
-
-            raise ValueError(msg)
-        return None
+            ans = fill_from(src, arr)
+            if ans is not None:
+                return ans
 
 
 def einsop(op_str: str, *tensors: Array, reduce: ReduceArg = 'sum', combine: CombineArg = 'multiply') -> Array:

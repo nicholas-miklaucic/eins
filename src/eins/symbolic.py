@@ -323,8 +323,8 @@ class Program:
                         per_sink_input.append(curr)
                 per_sink_inputs.append(per_sink_input)
 
-            print(per_sink_inputs)
-            print(self.sinks)
+            # print(per_sink_inputs)
+            # print(self.sinks)
             for sink_input, sink in zip(per_sink_inputs, self.sinks):
                 self.outputs.append(self.connect(sink_input, sink))
 
@@ -426,7 +426,7 @@ class Program:
 
 
 # env = Program.parse('b ((n p) (n p)) c d=c, b p*p*d*c h, h[g+i k] -> b (n^2 g+i) k')
-env = Program.parse('a b, b c -> a+c b')
+# env = Program.parse('a b, b c -> a+c b')
 # print(env)
 
 
