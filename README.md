@@ -33,19 +33,40 @@ One of the design goals of `eins` is to be painless to use in almost any Python 
 
 ## Roadmap
 
-`eins` is still in heavy development. Here's a sense of where we're headed:
+`eins` is still in heavy development. Here's a sense of where we're headed.
 
-- `...` for batching over dynamic numbers of batch axes
-- Specifying intermediate results to control the order of execution
-- Implementing `repeat`
-- Automatically optimizing the execution of a specific EinsOp for a specific computer and input size
-- Completing full support for tensor indexing
-- Annotating the output with its shape
-- Tabulating the model FLOPs/memory usage as a function of named axes
+### Short-Term
+
+- [ ] Better error reporting
+- [ ] `...` for batching over dynamic numbers of batch axes
+- [ ] Specifying intermediate results to control the order of reduction
+- [ ] Support `-` and `/` as natural pairs to `+` and `*`
+- [ ] Implementing `repeat`
+- [ ] Adding support for reductions that aren't in Array API (e.g., p-norm)
+- [ ] Adding support for "transformations" that are elementwise but use an axis (standardize)
+- [ ] Unit array to indicate zero-dimensional tensors
+- [ ] Updating indexing syntax to match `eindex`
+- [ ] Much more thorough documentation and tests for existing functionality
+- [ ] Better visualization of the program graph
+- [ ] `@local` syntax
+
+### Near-Term
+- [ ] Easy performance gains
+- [ ] Much better error reporting
+- [ ] Completing full support for tensor indexing
+- [ ] Warnings or errors for ambiguous expressions
+- [ ] Ways of visualizing and inspecting the computation graph
+
+### Long-Term
+- [ ] Layers for popular ML frameworks?
+- [ ] Automatically optimizing the execution of a specific EinsOp for a specific computer and input size
+- [ ] Static typing support that shows the array shapes
+- [ ] Tabulating the model FLOPs/memory usage as a function of named axes
+- [ ] Functionality akin to `pack` and `unpack`?
 
 ## Acknowledgements
 
-The excellent [`einops`](https://github.com/arogozhnikov/einops) library inspired this project and its syntax: consider `eins` an attempt at "`einops` on steroids." Einstein did a pretty good job coming up with the summation notation, so big shoutout to him.
+The excellent [`einops`](https://github.com/arogozhnikov/einops) library inspired this project and its syntax. After working on my own extension to handle indexing, I realized that [`eindex`](https://github.com/arogozhnikov/eindex) already had a more coherent vision for what indexing can look like, and so much of that syntax in this library borrows from that one.
 
 ## Contributing
 
@@ -58,39 +79,13 @@ Any contributions to `eins` are welcomed and appreciated! If you're interested i
 
 To do:
 
-- Debug issues with sums in output
-- Support for overriding parameter values
 - Passing in constants: this needs to be desugared to named values, I think?
 - When we duplicate n to n-2, also copy n's reduction
-- Start building a test library
-- Go through asserts and build out error reporting
 - Test with JIT and PyTorch
 - Get a basic perf comparison
 - Docs website, maybe rewrite a few big models
 - Example with non-Latin characters
-- Unit array
 - `pyproject.toml` fun stuff
-- Put constraints in a separate dict, to free up kwargs for further changes
-
-v0.1 new functionality:
-- Parsing elementwise/reduction/combination
-- Some kind of namespace for those ops or typed creation
-- Repeat: one-to-one where inputs are larger than outputs
 - Get ops from `nn` libraries or logit or something
 - Intermediate chaining syntax
-- Static typechecking
-
-Later functionality:
-- Give useful error message when order of reductions matters and is not specified: reduce -> reduce with different axes and incompatible reductions
-- We want to optimize reductions going forward, so some kind of error when not commutative with combination. `a b, b c, c d -> a d` relies on distributivity to be unambiguous
-- `-` and `/` operations: maybe these are just simple rewrites?
-- More general indexing
-- `...` variadic axes
-- Packaging more generally
-- Make compatible with Python 3.8
-- Pack and unpack replacements: this should probably be unified as "solve for the batch axes" and then substituting
-- `@local` syntax a la pandas query?
-- Strategies/autotuning
-- Graph visualization
-- Shape type annotations?
-- Flop annotations
+- Constants file with op characters and similar
