@@ -2,7 +2,7 @@
 
 from typing import Mapping, Optional, Union
 
-from eins.parsing import Constant, Expr, Node, Symbol, expr, flatten, make_expr, unpack_shorthands
+from eins.parsing import Constant, Expr, Node, Symbol, flatten
 
 MAX_STEPS = 100
 

@@ -42,9 +42,9 @@ One of the design goals of `eins` is to be painless to use in almost any Python 
 - [ ] Specifying intermediate results to control the order of reduction
 - [ ] Support `-` and `/` as natural pairs to `+` and `*`
 - [ ] Implementing `repeat`
-- [ ] Adding support for reductions that aren't in Array API (e.g., p-norm)
-- [ ] Adding support for "transformations" that are elementwise but use an axis (standardize)
-- [ ] Flip order of inputs (logsumexp is log + sum + exp)
+- [x] Adding support for reductions that aren't in Array API (e.g., p-norm)
+- [x] Adding support for "transformations" that are elementwise but use an axis (standardize)
+- [x] Flip order of inputs (logsumexp is log + sum + exp)
 - [ ] Unit array to indicate zero-dimensional tensors
 - [ ] Updating indexing syntax to match `eindex`
 - [ ] Much more thorough documentation and tests for existing functionality

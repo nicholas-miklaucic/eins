@@ -1,5 +1,5 @@
 """Transformations, inspired by the Pandas usage, are operations that maintain the array shape but perform an operation
-along an axis. The motivating example is softmax: softmax must be done on an axis, but it doesn't eliminate it."""
+along an axis. The motivating example is normalize: it must be done on an axis, but it doesn't eliminate it."""
 
 # normalize
 # scanned combine ops
@@ -10,31 +10,14 @@ along an axis. The motivating example is softmax: softmax must be done on an axi
 
 import typing
 import warnings
-from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
 from itertools import accumulate
 from typing import Literal, Union
 
 from eins.combination import Combination, parse_combination
-from eins.common_types import Array
+from eins.common_types import Array, Transformation
+from eins.reduction import Norm
 from eins.utils import array_backend
-
-
-class Transformation(metaclass=ABCMeta):
-    """A function that takes in an array and axis and returns an array of the same shape.
-    Examples are softmax, normalization, cumulative sum, etc."""
-
-    @classmethod
-    def parse(cls, _name: str):
-        """Attempts to construct an instance of the operation from the string name.
-        If unsuccessful, returns None."""
-        return None
-
-    @abstractmethod
-    def __call__(self, arr: Array, axis: int = 0) -> Array:
-        """Applies the transformation to an array on an axis."""
-        raise NotImplementedError
-
 
 # cumsum is the numpy version, so we support that name in addition to the Array API cumulative sum
 ArrayTransformationLiteral = Literal['sort', 'cumulative_sum', 'cumsum']
@@ -116,8 +99,69 @@ class Scan(Transformation):
             raise ValueError(msg)
 
 
+DEFAULT_NORM = Norm()
+NormalizeLiteral = Literal['normalize', 'l2-normalize', 'l1-normalize', 'inf-normalize']
+
+
+@dataclass(frozen=True, unsafe_hash=True)
+class Normalize(Transformation):
+    """Normalizes the inputs to have L_p norm equal to 1. See torch.nn.functional.normalize for details.
+
+    Parses like norm, but instead of norm it's normalize.
+    """
+
+    norm: Norm = DEFAULT_NORM
+    eps: float = 1e-12
+
+    @classmethod
+    def parse(cls, name: str):
+        if name.endswith('normalize'):
+            norm = Norm.parse(name.removesuffix('alize'))
+            if norm is not None:
+                return cls(norm=norm)
+
+        return None
+
+    def __call__(self, arr: Array, axis: int = 0):
+        xp = array_backend(arr)
+        if xp is not None:
+            norm = xp.expand_dims(self.norm(arr, axis=axis), axis=axis)
+            return xp / xp.maximum(norm, self.eps)
+        else:
+            msg = f'Cannot normalize non-Array {arr} of type {type(arr)}'
+            raise ValueError(msg)
+
+
+QuantileLiteral = Literal['quantile', 'min-max-normalize']
+
+
+class Quantile(Transformation):
+    """Transforms data so 0 is the minimum and 1 is the maximum.
+    Can be thought of as min-max normalization."""
+
+    eps: float = 1e-12
+
+    @classmethod
+    def parse(cls, name: str):
+        if name in ('quantile', 'min-max-normalize'):
+            return cls()
+        else:
+            return None
+
+    def __call__(self, arr: Array, axis: int = 0) -> Array:
+        xp = array_backend(arr)
+        if xp is not None:
+            lo = xp.expand_dims(xp.min(arr, axis=axis), axis=axis)
+            hi = xp.expand_dims(xp.max(arr, axis=axis), axis=axis)
+
+            return (xp - lo) / xp.maximum(hi - lo, self.eps)
+        else:
+            msg = f'Cannot min-max normalize non-Array {arr} of type {type(arr)}'
+            raise ValueError(msg)
+
+
 def parse_transformation(name: str) -> Transformation:
-    for cls in (ArrayTransformation, Scan):
+    for cls in (ArrayTransformation, Scan, Normalize, Quantile):
         parse = cls.parse(name)
         if parse is not None:
             return parse
@@ -125,4 +169,4 @@ def parse_transformation(name: str) -> Transformation:
     return None
 
 
-TransformationLiteral = Union[ArrayTransformationLiteral, ScanLiteral]
+TransformationLiteral = Union[ArrayTransformationLiteral, ScanLiteral, NormalizeLiteral, QuantileLiteral]

@@ -15,7 +15,7 @@ from eins.combination import (
 )
 from eins.common_types import Array
 from eins.concrete import ArrayBackend
-from eins.elementwise import ARRAY_ELEMWISE_OPS, ElementwiseLiteral, ElementwiseOp, parse_elementwise
+from eins.elementwise import ElementwiseLiteral, ElementwiseOp, parse_elementwise
 from eins.parsing import Constant
 from eins.reduction import (
     ARRAY_REDUCE_OPS,
@@ -87,7 +87,7 @@ def parse_reduce_arg(reduce: GeneralReductionKind) -> Reduction:
             )
             raise ValueError(msg)
 
-        return CompositeReduction(ops)
+        return CompositeReduction(tuple(ops))
 
 
 def parse_combine_arg(combine: CombineArg) -> Combination:
@@ -132,7 +132,7 @@ def parse_combine_arg(combine: CombineArg) -> Combination:
             )
             raise ValueError(msg)
 
-        return CompositeCombination(ops)
+        return CompositeCombination(tuple(ops))
 
 
 class EinsOp:
@@ -185,14 +185,11 @@ class EinsOp:
         if isinstance(reduce, Mapping):
             self.reduce = {k: parse_reduce_arg(v) for k, v in reduce.items()}
         else:
-            default_reduce = parse_reduce_arg(reduce)
-            self.reduce = defaultdict(lambda: default_reduce)
+            self.reduce = parse_reduce_arg(reduce)
 
         self.combine = parse_combine_arg(combine)
 
-        self.program = Program.parse(self.op_str)
-        self.program.reduce = self.reduce
-        self.program.combine = self.combine
+        self.program = Program.parse(self.op_str, combine=self.combine, reduce=self.reduce)
 
     def __repr__(self) -> str:
         return f'EinsOp({self.op_str}, reduce={self.reduce}, combine={self.combine})'

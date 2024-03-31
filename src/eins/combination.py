@@ -1,30 +1,12 @@
 """Operations that combine arrays."""
 
 import typing
-from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
 from typing import Callable, Literal, Sequence, Union
 
-from eins.common_types import Array
+from eins.common_types import Array, Combination
 from eins.elementwise import ElementwiseOp
 from eins.utils import array_backend
-
-
-class Combination(metaclass=ABCMeta):
-    """Operation to combine array values together. Commutative, associative function of signature R x R -> R."""
-
-    @classmethod
-    def parse(cls, _name: str):
-        """Attempts to construct an instance of the operation from the string name.
-        If unsuccessful, returns None. Used for shorthand syntax, like passing in
-        'sqrt' instead of the named Sqrt op."""
-        return None
-
-    @abstractmethod
-    def __call__(self, *arrs: Array) -> Array:
-        """Applies the function to the inputs, returning a single output."""
-        raise NotImplementedError
-
 
 # https://data-apis.org/array-api/latest/API_specification/elementwise_functions.html
 # Must be commutative, associative, R x R -> R

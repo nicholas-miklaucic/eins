@@ -171,20 +171,3 @@ def flatten(node: Node) -> Node:
             can_flatten = len(to_flatten) > 0
 
     return node
-
-
-def flatten(node: Node) -> Node:
-    if isinstance(node, Expr):
-        can_flatten = True
-        while can_flatten:
-            to_flatten = []
-            for i, child in enumerate(node.children):
-                if isinstance(child, Expr) and child.op == node.op:
-                    to_flatten.append(i)
-
-            for i in to_flatten[::-1]:
-                node.children = node.children[:i] + node.children[i].children + node.children[i + 1 :]
-
-            can_flatten = len(to_flatten) > 0
-
-    return node

@@ -1,30 +1,11 @@
 """Elementwise operations, for use in combination with reduction operations."""
 
 import typing
-from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
 from typing import Literal
 
-from eins.common_types import Array
+from eins.common_types import Array, ElementwiseOp
 from eins.utils import array_backend
-
-
-class ElementwiseOp(metaclass=ABCMeta):
-    """Elementwise operation on scalars that can map to arrays of any shape.
-    Signature *arr -> *arr."""
-
-    @classmethod
-    def parse(cls, _name: str):
-        """Attempts to construct an instance of the operation from the string name.
-        If unsuccessful, returns None. Used for shorthand syntax, like passing in
-        'sqrt' instead of the named Sqrt op."""
-        return None
-
-    @abstractmethod
-    def __call__(self, arr: Array) -> Array:
-        """Applies the function elementwise."""
-        raise NotImplementedError
-
 
 # https://data-apis.org/array-api/latest/API_specification/elementwise_functions.html
 # Every method without a second argument.

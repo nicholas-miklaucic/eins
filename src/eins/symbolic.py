@@ -262,7 +262,7 @@ class Program:
         constr: Constraints,
         combine: Combination = DEFAULT_COMBINE,
         reduce: Reduction | Mapping[str, Reduction] = DEFAULT_REDUCE,
-        reduce_early: bool = True,
+        reduce_early: bool = True,  # noqa: FBT001, FBT002
     ):
         self.reduce_early = reduce_early
         assert expr.op == '->' and len(expr.children) == 2
@@ -286,7 +286,10 @@ class Program:
 
         self.combine = combine
 
-        self.reduce = defaultdict(lambda: reduce)
+        if isinstance(reduce, Reduction):
+            self.reduce = defaultdict(lambda: reduce)
+        else:
+            self.reduce = reduce
         if not isinstance(reduce, Reduction):
             for k, v in reduce.items():
                 self.reduce[k] = v

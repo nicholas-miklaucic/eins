@@ -2,36 +2,14 @@
 
 import typing
 import warnings
-from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
 from functools import reduce
 from math import isnan
 from typing import Callable, Literal, Sequence, Union
 
 from eins.combination import Combination, parse_combination
-from eins.common_types import Array
-from eins.elementwise import ElementwiseOp
-from eins.transformation import Transformation
+from eins.common_types import Array, ElementwiseOp, Reduction, Transformation
 from eins.utils import array_backend
-
-
-class Reduction(metaclass=ABCMeta):
-    """A function that takes in an arbitrary number of arrays and reduces them to a single array
-    along an axis. Common examples: sum, product, mean, norm."""
-
-    @classmethod
-    def parse(cls, _name: str):
-        """Attempts to construct an instance of the operation from the string name.
-        If unsuccessful, returns None. Used for shorthand syntax, like passing in
-        'mean' instead of the named Mean op."""
-        return None
-
-    @abstractmethod
-    def __call__(self, arr: Array, axis: int = 0) -> Array:
-        """Applies the combination to an array on an axis, eliminating it.
-        a1 *rest -> *rest."""
-        raise NotImplementedError
-
 
 # https://data-apis.org/array-api/latest/API_specification/statistical_functions.html
 ArrayReductionLiteral = Literal['max', 'mean', 'min', 'prod', 'std', 'sum', 'var']
@@ -100,7 +78,12 @@ class Fold(Reduction):
     def __call__(self, arr: Array, axis: int = 0):
         xp = array_backend(arr)
         if xp is not None:
-            slices = xp.unstack(arr, axis=axis)
+            # unstack isn't implemented in Torch yet, even though it's part of the API
+            slc = [slice(None)] * arr.ndim
+            slices = []
+            for i in range(arr.shape[axis]):
+                slc[axis] = i
+                slices.append(arr[tuple(slc)])
             return reduce(self.combination, slices)
         else:
             msg = f'Cannot fold over non-Array {arr} of type {type(arr)}'

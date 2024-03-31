@@ -1,9 +1,25 @@
 from string import ascii_lowercase
 
-from eins import einsop
+from eins import EinsOp, einsop
 
 # Set this to 'jax', 'numpy', or 'torch'
 BACKEND = 'torch'
+
+if BACKEND == 'jax':
+    import jax.numpy as jnp
+
+    xp = jnp
+    arr = jnp.array
+elif BACKEND == 'numpy':
+    import numpy as np
+
+    xp = np
+    arr = np.array
+elif BACKEND == 'torch':
+    import torch
+
+    xp = torch
+    arr = torch.tensor
 
 
 def randn(*shape):
@@ -29,15 +45,14 @@ EPSILON = 1e-3
 
 
 def test_close(a, b):
-    shape = ' '.join(ascii_lowercase[: a.ndim])
-    diffs = einsop(f'{shape}, {shape} -> {shape}', a, -b, combine=('add', 'abs'))
+    diffs = xp.mean(xp.abs(a - b))
     assert diffs.max() < EPSILON, f'{a.shape} != {b.shape}, {a.mean()}, {b.mean()}, {diffs.max()}'
 
 
 # Simple matrix multiplication
 x = randn(32, 64)
 y = randn(64, 16)
-z = einsop('a b, b c -> a c', x, y)
+z = EinsOp('a b, b c -> a c')(x, y)
 test_close(z, x @ y)
 
 # Patch embedding from Vision Transformer. Take batches of (I * p) x (I * p) images and embed with a kernel of shape (p
@@ -46,12 +61,23 @@ kernel = randn(5 * 5 * 3, 12)
 bias = randn(12)
 images = randn(100, 55, 55, 3)
 
-patches = einsop(
-    'batch (I patch) (I patch) channels, (patch patch channels) embed_dim -> batch (I I) embed_dim', images, kernel
-)
-patches = einsop('batch (I I) embed_dim, embed_dim -> batch (I I) embed_dim', patches, bias, combine='add')
+linear = EinsOp('batch (I patch) (I patch) channels, (patch patch channels) embed_dim -> batch (I I) embed_dim')
+patches = linear(images, kernel)
+
+affine = EinsOp('batch (I I) embed_dim, embed_dim -> batch (I I) embed_dim', combine='add')
+patches = affine(patches, bias)
 
 
-x = randn(4, 2)
-y = einsop('a b -> a', x, reduce=('mean', 'cumprod'))
-test_close(y, (x[:, 0] + x[:, :2].sum(axis=1)) / 2)
+# Batched pairwise Euclidean distance.
+x = randn(8, 6, 32)
+y = randn(8, 6, 32)
+z1 = EinsOp('b n1 d, b n2 d -> b n1 n2', combine='add', reduce='l2-norm')(x, -y)
+z2 = EinsOp('b n1 d, b n2 d -> b n1 n2', combine='add', reduce=('sqrt', 'sum', 'square'))(x, -y)
+z3 = EinsOp('b n1 d, b n2 d -> b n1 n2', combine='add', reduce='hypot')(x, -y)
+
+# Version without eins. Note how easy it would be to write x[:, None, ...] - y[:, :, None, ...], which would lead to the
+# transposed version of the pairwise distances you want.
+z4 = xp.sqrt(xp.sum(xp.square(x[:, :, None, ...] - y[:, None, ...]), axis=-1))
+test_close(z1, z2)
+test_close(z2, z3)
+test_close(z3, z4)
