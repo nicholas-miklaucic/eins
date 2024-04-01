@@ -1,6 +1,6 @@
 import re
 from dataclasses import dataclass
-from typing import Callable, Union
+from typing import Callable, MutableSequence, Sequence, Union
 
 import pyparsing as pp
 
@@ -50,9 +50,8 @@ def unpack_shorthands(expr: str):
     return expr
 
 
-# parse = parse_einop('b (d=(n p) d) c, b p*p*c h, h[k] -> b n n k')
-# parse = parse_einop('b k=(a a) a -> a b')
-# pprint.pprint(parse)
+# parse = parse_einop('b (d=(n p) d) c, b p*p*c h, h[k] -> b n n k') parse = parse_einop('b k=(a a)
+# a -> a b') pprint.pprint(parse)
 
 # b ((d=((n)*(p)))*(d)) c, b p*p*c h, h[] k -> b n n k
 
@@ -69,7 +68,11 @@ pow_op = pp.one_of('^')
 arrow = spaces + pp.Literal('->') + spaces
 index_op = spaces + pp.one_of('@') + spaces
 
-symbol = pp.Word(pp.pyparsing_unicode.identchars, pp.pyparsing_unicode.identbodychars, exclude_chars='+-*/^()[] ->')
+symbol = pp.Word(
+    pp.pyparsing_unicode.identchars,
+    pp.pyparsing_unicode.identbodychars,
+    exclude_chars='+-*/^()[] ->',
+)
 literal = pp.Word(pp.nums)
 
 operand = symbol | literal
@@ -111,7 +114,7 @@ Node = Union[Constant, Symbol, 'Expr']
 @dataclass
 class Expr:
     op: str
-    children: list[Node]
+    children: MutableSequence[Node]
 
     def tree_map(self, op: Callable) -> 'Expr':
         op(self)
@@ -129,7 +132,7 @@ class Expr:
         return f'({self.op} ' + ' '.join(map(str, self.children)) + ')'
 
 
-def make_expr(parsed: list | str) -> Expr:
+def make_expr(parsed: Union[list, str]) -> Node:
     if isinstance(parsed, str):
         if parsed.isdigit():
             return Constant(int(parsed))
@@ -146,14 +149,10 @@ def make_expr(parsed: list | str) -> Expr:
 equations = []
 
 
-# unpacked = unpack_shorthands('(patch patch chan) -> patch patch chan')
-# print(unpacked)
-# pprint.pprint(expr.parse_string(unpacked).as_list())
-# ast = make_expr(expr.parse_string(unpacked).as_list())
-# print(ast)
-# constr = postprocess_ast(ast)
-# print(ast)
-# print(constr)
+# unpacked = unpack_shorthands('(patch patch chan) -> patch patch chan') print(unpacked)
+# pprint.pprint(expr.parse_string(unpacked).as_list()) ast =
+# make_expr(expr.parse_string(unpacked).as_list()) print(ast) constr = postprocess_ast(ast)
+# print(ast) print(constr)
 
 
 def flatten(node: Node) -> Node:
@@ -166,7 +165,9 @@ def flatten(node: Node) -> Node:
                     to_flatten.append(i)
 
             for i in to_flatten[::-1]:
-                node.children = node.children[:i] + node.children[i].children + node.children[i + 1 :]
+                node.children = (
+                    node.children[:i] + node.children[i].children + node.children[i + 1 :]
+                )
 
             can_flatten = len(to_flatten) > 0
 

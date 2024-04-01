@@ -2,6 +2,8 @@ site_name: Eins
 
 nav:
   - Home: index.md
+  - Tutorial: tutorial.md
+  - Eins In Depth: in-depth.md
   - API: $api/eins.***
 
 plugins:
@@ -10,12 +12,17 @@ plugins:
 
 theme:
   name: material
+  font:
+    code: Source Code Pro
+    text: Source Sans Pro
   features:
     - content.tooltips
+    - content.code.copy
     - navigation.expand
     - navigation.indexes
     - navigation.sections
     - navigation.tabs
+    - navigation.path
 
 
 markdown_extensions:

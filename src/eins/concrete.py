@@ -6,14 +6,27 @@ from array_api_compat import array_namespace
 
 from eins.common_types import Array
 from eins.constraint import Constraints
-from eins.symbolic import Combine, Concat, ExpandTo, Reduce, Reshape, ShapeOp, Split, Tensor, Transpose
+from eins.parsing import Expr
+from eins.symbolic import (
+    Combine,
+    Concat,
+    ExpandTo,
+    Reduce,
+    Reshape,
+    ShapeOp,
+    Split,
+    Tensor,
+    Transpose,
+)
 
 
 class ArrayBackend:
     def __init__(self, constr: Constraints):
         self.constr = constr
 
-    def do(self, x: Sequence[Array], op: ShapeOp, ins: Sequence[Tensor], _outs: Sequence[Tensor]) -> Sequence[Array]:
+    def do(
+        self, x: Sequence[Array], op: ShapeOp, ins: Sequence[Tensor], _outs: Sequence[Tensor]
+    ) -> Sequence[Array]:
         "Apply the op, which goes from i to o, on x, an actual array."
         if len(x) == 0:
             msg = 'Cannot call operation on empty inputs'
@@ -28,7 +41,18 @@ class ArrayBackend:
             elif isinstance(op, Transpose):
                 return [xp.permute_dims(x[0], axes=op.perm)]
             elif isinstance(op, Split):
-                sizes = map(self.constr.value_of, ins[0].axes[op.axis_num].children)
+                split_ax = ins[0].axes[op.axis_num]
+                if not (isinstance(split_ax, Expr) and split_ax.op == '+'):
+                    msg = f'Tried to split on {split_ax}, which is not a sum.'
+                    raise ValueError
+
+                sizes = []
+                for child in split_ax.children:
+                    val = self.constr.value_of(child)
+                    if val is None:
+                        msg = f'Could not compute value of {child} for split operation.'
+                        raise ValueError(msg)
+
                 out = []
                 curr = 0
                 for size in sizes:
@@ -55,6 +79,9 @@ class ArrayBackend:
             elif isinstance(op, Reduce):
                 # print(ins, _outs, op, id(_outs[0]))
                 return [op.method(x[0], axis=ins[0].axes.index(op.axis))]
+            else:
+                msg = 'Op not supported: ' + str(op)
+                raise TypeError(msg)
         except TypeError as err:
             msg = (
                 'An error occurred when applying the operation.\n'

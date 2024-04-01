@@ -4,11 +4,12 @@ import typing
 import warnings
 from dataclasses import dataclass
 from functools import reduce
+from itertools import chain
 from math import isnan
-from typing import Callable, Literal, Sequence, Union
+from typing import Literal, Optional, Sequence, Union
 
 from eins.combination import Combination, parse_combination
-from eins.common_types import Array, ElementwiseOp, Reduction, Transformation
+from eins.common_types import Array, ElementwiseOp, Reduction, ReductionFunc, Transformation
 from eins.utils import array_backend
 
 # https://data-apis.org/array-api/latest/API_specification/statistical_functions.html
@@ -33,16 +34,16 @@ class ArrayReduction(Reduction):
         else:
             return None
 
-    def __call__(self, arr: Array, axis: int = 0):
+    def __call__(self, arr: Array, axis: int = 0) -> Array:
         xp = array_backend(arr)
         if xp is not None and hasattr(xp, self.func_name):
             func = getattr(xp, self.func_name)
             return func(arr, axis=axis)
         elif hasattr(arr, self.func_name):
             func = getattr(arr, self.func_name)(axis=axis)
-        else:
-            msg = f'Name {self.func_name} not a valid function for array of type {type(arr)}'
-            raise ValueError(msg) from None
+
+        msg = f'Name {self.func_name} not a valid function for array of type {type(arr)}'
+        raise ValueError(msg)
 
 
 REDUNDANT_FOLDS = {
@@ -57,8 +58,8 @@ REDUNDANT_FOLDS = {
 class Fold(Reduction):
     """Reduction using a combination operation to fold an array.
 
-    Many of the simple choices here already have reductions. These will give warnings for now, because you probably want
-    sum instead of add or max instead of maximum.
+    Many of the simple choices here already have reductions. These will give warnings for now,
+    because you probably want sum instead of add or max instead of maximum.
     """
 
     combination: Combination
@@ -75,11 +76,11 @@ class Fold(Reduction):
         else:
             return None
 
-    def __call__(self, arr: Array, axis: int = 0):
+    def __call__(self, arr: Array, axis: int = 0) -> Array:
         xp = array_backend(arr)
         if xp is not None:
             # unstack isn't implemented in Torch yet, even though it's part of the API
-            slc = [slice(None)] * arr.ndim
+            slc: list[Union[slice, int]] = [slice(None)] * arr.ndim
             slices = []
             for i in range(arr.shape[axis]):
                 slc[axis] = i
@@ -91,14 +92,17 @@ class Fold(Reduction):
 
 
 @dataclass(frozen=True, unsafe_hash=True)
-class Norm(Reduction):
+class PowerNorm(Reduction):
     """p-norm: defaults to L2 norm.
 
-    Parses a string of the form `{p}-norm`, such as `2-norm` for the Euclidean norm. Also supports a prefix of `L` or
-    `l`, so you can write `l1-norm` instead of `1-norm` if you prefer. `norm` is special-cased to the Euclidean norm.
+    Parses a string of the form `{p}_norm`, such as `2_norm` for the Euclidean norm. Also supports a
+    prefix of `L` or `l`, so you can write `l1_norm` instead of `1_norm` if you prefer. `norm` is
+    special-cased to the Euclidean norm.
 
-    Supports the [np.linalg.norm](https://numpy.org/doc/stable/reference/generated/numpy.linalg.norm.html) vector norm
-    options: `inf-norm` is `max(abs(x))`, `-inf-norm` is `min(abs(x))`, and `0-norm` is `sum(x != 0)`."""
+    Supports the
+    [np.linalg.norm](https://numpy.org/doc/stable/reference/generated/numpy.linalg.norm.html) vector
+    norm options: `inf_norm` is `max(abs(x))`, `-inf_norm` is `min(abs(x))`, and `0_norm` is `sum(x
+    != 0)`."""
 
     power: float = 2
 
@@ -109,8 +113,8 @@ class Norm(Reduction):
 
         if name and name[0] in ('L', 'l'):
             name = name[1:]
-        if name.endswith('-norm'):
-            power = name.removesuffix('-norm')
+        if name.endswith('_norm'):
+            power = name[: len('_norm')]
             try:
                 power = float(power)
                 if not isnan(power):
@@ -119,7 +123,7 @@ class Norm(Reduction):
                 return None
         return None
 
-    def __call__(self, arr: Array, axis: int = 0):
+    def __call__(self, arr: Array, axis: int = 0) -> Array:
         xp = array_backend(arr)
         if xp is not None:
             if self.power == 0:
@@ -136,7 +140,7 @@ class Norm(Reduction):
 
 
 # we can't enumerate every valid norm string, but we can special-case the common ones
-NormLiteral = Literal['norm', 'l2-norm', 'l1-norm', 'inf-norm']
+NormLiteral = Literal['norm', 'l2_norm', 'l1_norm', 'inf_norm']
 
 
 class Range(Reduction):
@@ -149,7 +153,7 @@ class Range(Reduction):
         else:
             return None
 
-    def __call__(self, arr: Array, axis: int = 0):
+    def __call__(self, arr: Array, axis: int = 0) -> Array:
         xp = array_backend(arr)
         if xp is not None:
             return xp.max(arr, axis=axis) - xp.min(arr, axis=axis)
@@ -165,14 +169,15 @@ RangeLiteral = Literal['range', 'ptp']
 class CompositeReduction(Reduction):
     """Reduction using elementwise operations and transformations in addition to a reduction.
 
-    Functions are applied from right-to-left. For example, `('log', 'sum', 'exp')` computes `log(sum(exp(x)))`."""
+    Functions are applied from right-to-left. For example, `('log', 'sum', 'exp')` computes
+    `log(sum(exp(x)))`."""
 
     ops: Sequence[Union[ElementwiseOp, Transformation, Reduction]]
 
     @classmethod
     def parse(cls, _name: str):
-        # perhaps a syntax like 'square |> sum |> sqrt' could be added in the future, but for now I'll only support
-        # explicit tuples.
+        # perhaps a syntax like 'square |> sum |> sqrt' could be added in the future, but for now
+        # I'll only support explicit tuples.
         return None
 
     def __call__(self, arr: Array, axis: int = 0) -> Array:
@@ -198,19 +203,19 @@ class CompositeReduction(Reduction):
 
 
 @dataclass
-class UserReduction(Reduction):
+class CustomReduction(Reduction):
     """Reduction using a user-defined function.
 
     func must take in an array and an axis argument, returning an array with that axis removed."""
 
-    func: Callable
+    func: ReductionFunc
 
     def __call__(self, arr: Array, axis: int = 0) -> Array:
         return self.func(arr, axis=axis)
 
 
-def parse_reduction(name: str) -> Reduction:
-    for cls in (ArrayReduction, Fold, Norm, Range):
+def parse_reduction(name: str) -> Optional[Reduction]:
+    for cls in (ArrayReduction, Fold, PowerNorm, Range):
         parse = cls.parse(name)
         if parse is not None:
             return parse
@@ -219,3 +224,8 @@ def parse_reduction(name: str) -> Reduction:
 
 
 ReductionLiteral = Union[ArrayReductionLiteral, NormLiteral, RangeLiteral]
+
+ops = {
+    str(op): parse_reduction(op)
+    for op in chain.from_iterable(map(typing.get_args, typing.get_args(ReductionLiteral)))
+}

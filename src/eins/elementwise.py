@@ -2,13 +2,13 @@
 
 import typing
 from dataclasses import dataclass
-from typing import Literal
+from typing import Literal, Optional
 
-from eins.common_types import Array, ElementwiseOp
+from eins.common_types import Array, ElementwiseFunc, ElementwiseOp
 from eins.utils import array_backend
 
-# https://data-apis.org/array-api/latest/API_specification/elementwise_functions.html
-# Every method without a second argument.
+# https://data-apis.org/array-api/latest/API_specification/elementwise_functions.html Every method
+# without a second argument.
 
 ArrayElementwiseLiteral = Literal[
     'abs',
@@ -71,12 +71,24 @@ class ArrayElementwiseOp(ElementwiseOp):
             return func(arr)
         elif hasattr(arr, self.func_name):
             func = getattr(arr, self.func_name)()
-        else:
-            msg = f'Name {self.func_name} not a valid function for array of type {type(arr)}'
-            raise ValueError(msg) from None
+
+        msg = f'Name {self.func_name} not a valid function for array of type {type(arr)}'
+        raise ValueError(msg) from None
 
 
-def parse_elementwise(name: str) -> ElementwiseOp:
+@dataclass
+class CustomElementwiseOp(ElementwiseOp):
+    """Elementwise operation defined by user.
+
+    func must take in an array and return an array of the same size."""
+
+    func: ElementwiseFunc
+
+    def __call__(self, arr: Array) -> Array:
+        return self.func(arr)
+
+
+def parse_elementwise(name: str) -> Optional[ElementwiseOp]:
     arr_parse = ArrayElementwiseOp.parse(name)
     if arr_parse is not None:
         return arr_parse
@@ -85,3 +97,8 @@ def parse_elementwise(name: str) -> ElementwiseOp:
 
 
 ElementwiseLiteral = ArrayElementwiseLiteral
+
+ops = {str(op): parse_elementwise(op) for op in typing.get_args(ElementwiseLiteral)}
+
+
+# others to add: logit expit/sigmoid activation functions

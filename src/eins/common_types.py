@@ -1,37 +1,59 @@
 """Type definitions"""
 
 from abc import ABCMeta, abstractmethod
-from typing import TypeVar
+from typing import Callable, Optional, Protocol, Sequence, Tuple, Union
 
-Array = TypeVar('Array')
+
+class Array(Protocol):
+    """Array functionality required for Eins to work."""
+
+    def __getitem__(
+        self,
+        key: Union[int, slice, Tuple[Union[int, slice], ...]],
+    ) -> 'Array': ...
+
+    @property
+    def shape(self) -> Sequence[int]: ...
+
+    @property
+    def ndim(self) -> int: ...
 
 
 class Reduction(metaclass=ABCMeta):
-    """A function that takes in an arbitrary number of arrays and reduces them to a single array
-    along an axis. Common examples: sum, product, mean, norm."""
+    """
+    A function with signature f(Array, axis: int) → Array that removes the axis. Common examples:
+    sum, product, mean, norm.
+    """
 
     @classmethod
-    def parse(cls, _name: str):
-        """Attempts to construct an instance of the operation from the string name.
-        If unsuccessful, returns None. Used for shorthand syntax, like passing in
-        'mean' instead of the named Mean op."""
+    def parse(cls, _name: str) -> Optional['Reduction']:
+        """
+        Attempts to construct an instance of the operation from the string name. If unsuccessful,
+        returns None. Used for shorthand syntax, like passing in 'mean' instead of the named Mean
+        op.
+        """
         return None
 
     @abstractmethod
     def __call__(self, arr: Array, axis: int = 0) -> Array:
-        """Applies the combination to an array on an axis, eliminating it.
-        a1 *rest -> *rest."""
+        """
+        Applies the combination to an array on an axis, eliminating it. a1 *rest -> *rest.
+        """
         raise NotImplementedError
 
 
 class Transformation(metaclass=ABCMeta):
-    """A function that takes in an array and axis and returns an array of the same shape.
-    Examples are softmax, normalization, cumulative sum, etc."""
+    """
+    A function with signature f(Array, axis: int) → Array. Examples are softmax, normalization,
+    cumulative sum.
+    """
 
     @classmethod
-    def parse(cls, _name: str):
-        """Attempts to construct an instance of the operation from the string name.
-        If unsuccessful, returns None."""
+    def parse(cls, _name: str) -> Optional['Transformation']:
+        """
+        Attempts to construct an instance of the operation from the string name. If unsuccessful,
+        returns None.
+        """
         return None
 
     @abstractmethod
@@ -41,14 +63,18 @@ class Transformation(metaclass=ABCMeta):
 
 
 class ElementwiseOp(metaclass=ABCMeta):
-    """Elementwise operation on scalars that can map to arrays of any shape.
-    Signature *arr -> *arr."""
+    """
+    Elementwise operation on scalars that can map to arrays of any shape. Signature f(Array) →
+    Array.
+    """
 
     @classmethod
-    def parse(cls, _name: str):
-        """Attempts to construct an instance of the operation from the string name.
-        If unsuccessful, returns None. Used for shorthand syntax, like passing in
-        'sqrt' instead of the named Sqrt op."""
+    def parse(cls, _name: str) -> Optional['ElementwiseOp']:
+        """
+        Attempts to construct an instance of the operation from the string name. If unsuccessful,
+        returns None. Used for shorthand syntax, like passing in 'sqrt' instead of the named Sqrt
+        op.
+        """
         return None
 
     @abstractmethod
@@ -58,16 +84,27 @@ class ElementwiseOp(metaclass=ABCMeta):
 
 
 class Combination(metaclass=ABCMeta):
-    """Operation to combine array values together. Commutative, associative function of signature R x R -> R."""
+    """
+    Operation to combine array values together. Commutative, associative function of signature
+    f(Array, Array) → Array.
+    """
 
     @classmethod
-    def parse(cls, _name: str):
-        """Attempts to construct an instance of the operation from the string name.
-        If unsuccessful, returns None. Used for shorthand syntax, like passing in
-        'sqrt' instead of the named Sqrt op."""
+    def parse(cls, _name: str) -> Optional['Combination']:
+        """
+        Attempts to construct an instance of the operation from the string name. If unsuccessful,
+        returns None. Used for shorthand syntax, like passing in 'sqrt' instead of the named Sqrt
+        op.
+        """
         return None
 
     @abstractmethod
-    def __call__(self, *arrs: Array) -> Array:
-        """Applies the function to the inputs, returning a single output."""
+    def __call__(self, arr1: Array, arr2: Array) -> Array:
+        """Applies the function to the two inputs, returning a single output."""
         raise NotImplementedError
+
+
+CombinationFunc = Callable[[Array, Array], Array]
+ReductionFunc = Callable[..., Array]
+TransformationFunc = Callable[..., Array]
+ElementwiseFunc = Callable[[Array], Array]

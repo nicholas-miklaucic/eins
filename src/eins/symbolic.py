@@ -7,7 +7,7 @@ from collections import defaultdict
 from copy import deepcopy
 from dataclasses import dataclass
 from itertools import chain
-from typing import Mapping, Sequence, Union
+from typing import Mapping, MutableSequence, Sequence, Union, cast
 
 from eins.combination import ArrayCombination, Combination
 from eins.constraint import Constraints, postprocess_ast
@@ -23,8 +23,9 @@ class Tensor:
         self.parents = []
         self.children = []
         self.idx_axis = None
+        self.axes: MutableSequence[Node] = []
         if isinstance(expr, (Constant, Symbol)):
-            self.axes = [expr]
+            self.axes.append(expr)
             return
 
         if expr.op == ' ':
@@ -33,15 +34,18 @@ class Tensor:
             self.axes = Tensor(expr.children[0]).axes
             self.idx_axis = expr.children[1]
         else:
-            self.axes = [expr]
+            self.axes.append(expr)
 
     def deepcopy(self) -> 'Tensor':
         t = Tensor(Expr(' ', deepcopy(self.axes)))
         t.idx_axis = self.idx_axis
         return t
 
-    def axes_list(self) -> Sequence[str]:
-        return [ax.value if isinstance(ax, Symbol) else print('uh', ax, type(ax)) for ax in self.axes]
+    def axes_list(self) -> 'list[str]':
+        if any(not isinstance(ax, Symbol) for ax in self.axes):
+            msg = f'All axes must be symbols, but got {pprint.pformat(self.axes)}'
+            raise ValueError(msg)
+        return [ax.value for ax in self.axes if isinstance(ax, Symbol)]
 
     def add_child_op(self, children: 'Sequence[Tensor]', op: 'ShapeOp'):
         for child in children:
@@ -81,9 +85,9 @@ class ShapeOp(metaclass=ABCMeta):
 
 @dataclass(unsafe_hash=True)
 class Reshape(ShapeOp):
-    new_shape: tuple[Node]
+    new_shape: Sequence[Node]
 
-    def apply(self, _tensors: Sequence[Tensor]) -> Sequence[Tensor]:
+    def apply(self, tensors: Sequence[Tensor]) -> Sequence[Tensor]:  # noqa: ARG002
         return [Tensor(Expr(' ', list(self.new_shape)))]
 
 
@@ -104,7 +108,12 @@ class Split(ShapeOp):
 
     def apply(self, tensors: Sequence[Tensor]) -> Sequence[Tensor]:
         children = []
-        for addend in tensors[0].axes[self.axis_num].children:
+        split_ax = tensors[0].axes[self.axis_num]
+        if not isinstance(split_ax, Expr) or split_ax.op != '+':
+            msg = f'Tried to split on {split_ax} in {tensors}, which is not a sum.'
+            raise ValueError(msg)
+
+        for addend in split_ax.children:
             child = tensors[0].deepcopy()
             child.axes[self.axis_num] = addend
             children.append(child)
@@ -128,6 +137,9 @@ class OneHot(ShapeOp):
 
     def apply(self, tensors: Sequence[Tensor]) -> Sequence[Tensor]:
         child = tensors[0].deepcopy()
+        if child.idx_axis is None:
+            msg = f'Cannot one-hot on {child} because it does not have an index axis'
+            raise ValueError(msg)
         child.axes.append(child.idx_axis)
         child.idx_axis = None
         return [child]
@@ -138,15 +150,15 @@ class ExpandTo(ShapeOp):
     """Adds new axes with 1 to broadcast with the current shape. Output should be
     a supersequence of the current shape."""
 
-    new_shape: tuple[Node]
+    new_shape: Sequence[Node]
 
-    def apply(self, _tensors: Sequence[Tensor]) -> Sequence[Tensor]:
+    def apply(self, tensors: Sequence[Tensor]) -> Sequence[Tensor]:  # noqa: ARG002
         return [Tensor(Expr(' ', list(self.new_shape)))]
 
 
 @dataclass(unsafe_hash=True)
 class Combine(ShapeOp):
-    method: Reduction
+    method: Combination
 
     def apply(self, tensors: Sequence[Tensor]) -> Sequence[Tensor]:
         return [tensors[0].deepcopy()]
@@ -166,19 +178,30 @@ class Reduce(ShapeOp):
         return [out]
 
 
+# Ruff *really* does not like magic numbers!
+EXP_ARITY = 2
+
+
 def expanded_shape(node: Node) -> Sequence[Node]:
     if isinstance(node, (Constant, Symbol)):
         return [node]
-    else:
-        match node.op:
-            case '*':
-                return list(chain.from_iterable(map(expanded_shape, node.children)))
-            case '^':
-                return list(
-                    chain.from_iterable([expanded_shape(node.children[0]) for _ in range(node.children[1].value)])
-                )
-            case '+':
-                return [node]
+    elif node.op == '*':
+        return list(chain.from_iterable(map(expanded_shape, node.children)))
+    elif node.op == '^':
+        if not (len(node.children) == EXP_ARITY and isinstance(node.children[1], Constant)):
+            msg = f'Unexpected exponent {node.children[1]}'
+            raise ValueError(msg)
+
+        return list(
+            chain.from_iterable(
+                [expanded_shape(node.children[0]) for _ in range(node.children[1].value)]
+            )
+        )
+    elif node.op == '+':
+        return [node]
+
+    msg = f'Unexpected node {node}'
+    raise ValueError(msg)
 
 
 def normalize_step(tensor: Tensor) -> Sequence[Tensor]:
@@ -187,7 +210,11 @@ def normalize_step(tensor: Tensor) -> Sequence[Tensor]:
         for i, ax in enumerate(tensor.axes):
             if isinstance(ax, Expr) and ax.op in ('*', '^'):
                 # simple flatten
-                new_shape = deepcopy(tensor.axes[:i]) + expanded_shape(ax) + deepcopy(tensor.axes[i + 1 :])
+                new_shape = (
+                    list(deepcopy(tensor.axes[:i]))
+                    + list(expanded_shape(ax))
+                    + list(deepcopy(tensor.axes[i + 1 :]))
+                )
                 return Reshape(new_shape)(tensor)
             elif isinstance(ax, Expr) and ax.op == '+':
                 # split
@@ -219,13 +246,12 @@ def normalize_until_done(tensor: Tensor) -> Sequence[Tensor]:
 
 
 def reverse_graph(root: Tensor):
-    assert len(root.children) <= 1
+    if len(root.children) > 1:
+        msg = f'Cannot reverse {root} because it has more than one child'
+        raise ValueError(msg)
 
     if not root.children:
         return root
-
-    if len(root.children) > 1:
-        raise ValueError
 
     op, children = root.children[0]
     if isinstance(op, Reshape):
@@ -240,8 +266,9 @@ DEFAULT_COMBINE = ArrayCombination('multiply')
 DEFAULT_REDUCE = ArrayReduction('sum')
 
 
-def combine_mismatched(combine: Combination, tensors: Sequence[Tensor]) -> Tensor:
-    """Combines tensors together, broadcasting and transposing as needed. Assumes tensors are in normal form."""
+def combine_mismatched(combine: Combine, tensors: Sequence[Tensor]) -> Tensor:
+    """Combines tensors together, broadcasting and transposing as needed. Assumes tensors are in
+    normal form."""
     out = tensors[0]
     for t in tensors[1:]:
         new_axes = out.axes_list() + [ax for ax in t.axes_list() if ax not in out.axes_list()]
@@ -255,18 +282,36 @@ def combine_mismatched(combine: Combination, tensors: Sequence[Tensor]) -> Tenso
     return out
 
 
+# *rolls eyes*
+MAX_ARROW_OPERANDS = 2
+
+
 class Program:
     def __init__(
         self,
         expr: Expr,
         constr: Constraints,
         combine: Combination = DEFAULT_COMBINE,
-        reduce: Reduction | Mapping[str, Reduction] = DEFAULT_REDUCE,
+        reduce: Union[Reduction, Mapping[str, Reduction]] = DEFAULT_REDUCE,
         reduce_early: bool = True,  # noqa: FBT001, FBT002
     ):
         self.reduce_early = reduce_early
-        assert expr.op == '->' and len(expr.children) == 2
+
+        if expr.op != '->':
+            msg = f'Expected -> as operator, but got {expr.op}'
+            raise ValueError(msg)
+
+        if len(expr.op) != MAX_ARROW_OPERANDS:
+            msg = f'For now, Eins only supports one -> per expression, but got {len(expr.op)}'
+            raise ValueError(msg)
+
         lhs, rhs = expr.children
+
+        if not isinstance(lhs, Expr):
+            lhs = Expr(' ', cast(MutableSequence[Node], [lhs]))
+
+        if not isinstance(rhs, Expr):
+            rhs = Expr(' ', cast(MutableSequence[Node], [rhs]))
 
         if lhs.op == ',':
             self.sources = [Tensor(c) for c in lhs.children]
@@ -278,7 +323,7 @@ class Program:
             self.current.extend(normalize_until_done(source))
 
         self.orig_sink = Tensor(rhs)
-        self.sinks = normalize_until_done(self.orig_sink)
+        self.sinks = list(normalize_until_done(self.orig_sink))
         self.constr = constr
 
         for t in self.current + self.sinks:
@@ -289,17 +334,16 @@ class Program:
         if isinstance(reduce, Reduction):
             self.reduce = defaultdict(lambda: reduce)
         else:
-            self.reduce = reduce
+            self.reduce = dict(reduce)
         if not isinstance(reduce, Reduction):
             for k, v in reduce.items():
                 self.reduce[k] = v
 
         self.outputs = []
         if len(self.sinks) > 1:
-            # multiple tensors in output
-            # this is the one time the rules are relaxed about using all inputs
-            # tensors that only have an axis in a different split aren't used
-            # e.g., a b, a c -> a b+c just does a b -> a b, a c -> a c
+            # multiple tensors in output this is the one time the rules are relaxed about using all
+            # inputs tensors that only have an axis in a different split aren't used e.g., a b, a c
+            # -> a b+c just does a b -> a b, a c -> a c
             axes_sets = [set(sink.axes_list()) for sink in self.sinks]
 
             all_splits = set()
@@ -318,16 +362,14 @@ class Program:
             for diff in diffs:
                 per_sink_input = []
                 for curr in self.current:
-                    # TODO needs to be more robust for multiple splits?
-                    # it can't be on the "wrong side" of a single split
-                    # a c, a d, b c, b d -> a+b c+d
+                    # TODO needs to be more robust for multiple splits? it can't be on the "wrong
+                    # side" of a single split a c, a d, b c, b d -> a+b c+d
                     curr_ax = set(curr.axes_list())
                     if curr_ax.isdisjoint(all_splits - diff):
                         per_sink_input.append(curr)
                 per_sink_inputs.append(per_sink_input)
 
-            # print(per_sink_inputs)
-            # print(self.sinks)
+            # print(per_sink_inputs) print(self.sinks)
             for sink_input, sink in zip(per_sink_inputs, self.sinks):
                 self.outputs.append(self.connect(sink_input, sink))
 
@@ -337,7 +379,10 @@ class Program:
         reverse_graph(self.orig_sink)
 
         for out, sink in zip(self.outputs, self.sinks):
-            assert out.is_same_shape(sink)
+            if not out.is_same_shape(sink):
+                msg = f'Output {out} is not the same shape as sink {sink}'
+                raise ValueError(msg)
+
             out.children = sink.children
             for _op, children in out.children:
                 for child in children:
@@ -353,6 +398,9 @@ class Program:
     @classmethod
     def parse(cls, op: str, **kwargs):
         expr = make_expr(expr_parser.parse_string(unpack_shorthands(op)).as_list())
+        if not isinstance(expr, Expr):
+            msg = f'Expected expression, but got {expr}'
+            raise ValueError(msg)
         constraints = postprocess_ast(expr)
         return cls(expr, constraints, **kwargs)
 
@@ -374,9 +422,10 @@ class Program:
 
         if self.reduce_early:
             exp_axes = [set(exp.axes_list()) for exp in transposed]
+            combined = transposed[0]
             for i, exp in enumerate(transposed):
                 if i == 0:
-                    combined = exp
+                    continue
                 else:
                     combined = combine_mismatched(Combine(self.combine), (combined, exp))
 
@@ -387,7 +436,9 @@ class Program:
                 # axes in the input, to reduce, that aren't in future tensors
                 to_reduce = (reduce_axes - in_rest) & set(combined.axes_list())
                 for r_ax in to_reduce:
-                    combined = Program.apply_op(Reduce(self.reduce[r_ax], Symbol(r_ax)), combined)[0]
+                    combined = Program.apply_op(Reduce(self.reduce[r_ax], Symbol(r_ax)), combined)[
+                        0
+                    ]
             reduced = combined
         else:
             expanded = []
@@ -400,13 +451,17 @@ class Program:
                 reduced = Program.apply_op(Reduce(self.reduce[ax], Symbol(ax)), reduced)[0]
 
         r_axs = reduced.axes_list()
-        assert set(r_axs) == set(goal_axes), f'{r_axs} != {goal_axes}'
+        if set(r_axs) != set(goal_axes):
+            msg = f'{r_axs} != {goal_axes}'
+            raise ValueError(msg)
 
         perm = tuple(sorted(range(len(r_axs)), key=lambda x: goal_axes.index(r_axs[x])))
 
         out = Program.apply_op(Transpose(perm), reduced)[0]
 
-        assert out.axes_list() == goal_axes, f'{out.axes_list()} != {goal_axes}'
+        if out.axes_list() != goal_axes:
+            msg = f'{out.axes_list()} != {goal_axes}'
+            raise ValueError(msg)
 
         return out
 
@@ -428,10 +483,8 @@ class Program:
         return '\n'.join(strings)
 
 
-# env = Program.parse('b ((n p) (n p)) c d=c, b p*p*d*c h, h[g+i k] -> b (n^2 g+i) k')
-# env = Program.parse('a b, b c -> a+c b')
-# print(env)
+# env = Program.parse('b ((n p) (n p)) c d=c, b p*p*d*c h, h[g+i k] -> b (n^2 g+i) k') env =
+# Program.parse('a b, b c -> a+c b') print(env)
 
 
-# ops to reverse graph from sink to targets
-# just get it fing done
+# ops to reverse graph from sink to targets just get it fing done

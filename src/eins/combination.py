@@ -2,17 +2,25 @@
 
 import typing
 from dataclasses import dataclass
-from typing import Callable, Literal, Sequence, Union
+from typing import Literal, Optional, Sequence, Union
 
-from eins.common_types import Array, Combination
+from eins.common_types import Array, Combination, CombinationFunc
 from eins.elementwise import ElementwiseOp
 from eins.utils import array_backend
 
-# https://data-apis.org/array-api/latest/API_specification/elementwise_functions.html
-# Must be commutative, associative, R x R -> R
+# https://data-apis.org/array-api/latest/API_specification/elementwise_functions.html Must be
+# commutative, associative, R x R -> R
 
 ArrayCombineLiteral = Literal[
-    'add', 'hypot', 'logaddexp', 'maximum', 'minimum', 'multiply', 'bitwise_xor', 'bitwise_and', 'bitwise_or'
+    'add',
+    'hypot',
+    'logaddexp',
+    'maximum',
+    'minimum',
+    'multiply',
+    'bitwise_xor',
+    'bitwise_and',
+    'bitwise_or',
 ]
 
 ARRAY_COMBINE_OPS = [str(x) for x in typing.get_args(ArrayCombineLiteral)]
@@ -34,7 +42,8 @@ class ArrayCombination(Combination):
         else:
             return None
 
-    def __call__(self, *arrs: Array) -> Array:
+    def __call__(self, arr1: Array, arr2: Array) -> Array:
+        arrs = (arr1, arr2)
         if len(arrs) == 0:
             msg = 'Cannot combine empty list of arrays'
             raise ValueError(msg)
@@ -55,13 +64,14 @@ class ArrayCombination(Combination):
         return out
 
 
-class UserCombination(Combination):
+@dataclass
+class CustomCombination(Combination):
     """Combination operation using a user-defined function."""
 
-    func: Callable
+    func: CombinationFunc
 
-    def __call__(self, *arrs: Array) -> Array:
-        return self.func(*arrs)
+    def __call__(self, arr1: Array, arr2: Array) -> Array:
+        return self.func(arr1, arr2)
 
 
 @dataclass
@@ -70,7 +80,8 @@ class CompositeCombination(Combination):
 
     ops: Sequence[Union[ElementwiseOp, Combination]]
 
-    def __call__(self, *arrs: Array) -> Array:
+    def __call__(self, arr1: Array, arr2: Array) -> Array:
+        arrs = (arr1, arr2)
         out = arrs
         combines = 0
         for op in self.ops:
@@ -88,9 +99,12 @@ class CompositeCombination(Combination):
 CombineLiteral = ArrayCombineLiteral
 
 
-def parse_combination(name: str) -> Combination:
+def parse_combination(name: str) -> Optional[Combination]:
     arr_parse = ArrayCombination.parse(name)
     if arr_parse is not None:
         return arr_parse
     else:
         return None
+
+
+ops = {str(op): parse_combination(op) for op in typing.get_args(CombineLiteral)}
