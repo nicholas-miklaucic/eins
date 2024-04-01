@@ -23,8 +23,10 @@ theme:
     - navigation.sections
     - navigation.tabs
     - navigation.path
+  icon:
+    - code: fontawesome/brands/github
 
-
+repo_url: https://github.com/nicholas-miklaucic/eins
 markdown_extensions:
   # Python Markdown
   - abbr

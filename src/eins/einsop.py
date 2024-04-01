@@ -52,8 +52,9 @@ def _parse_reduce_arg(reduce: GeneralReductionKind) -> Reduction:
         if reduce_parse is not None:
             return reduce_parse
 
-        msg = f'Cannot parse reduction {reduce}. Valid literals are: {", ".join(
-            ARRAY_REDUCE_OPS + ARRAY_COMBINE_OPS)}'
+        msg = f'Cannot parse reduction {reduce}. Valid literals are: ' + ', '.join(
+            ARRAY_REDUCE_OPS + ARRAY_COMBINE_OPS
+        )
         raise ValueError(msg)
     else:
         ops = []
