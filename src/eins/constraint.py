@@ -27,13 +27,15 @@ class Constraints:
             self.equations.append((lhs, rhs))
 
     def process_constraints(self, node: Node):
-        if isinstance(node, Expr) and node.op == '=':
-            if len(node.children) != 2:  # noqa: PLR2004
-                msg = 'Must have exactly two parts to equality'
-                raise ValueError(msg)
-            lhs, rhs = node.children
-            self.equations.append((lhs, rhs))
-            node.replace_with(Expr(' ', [lhs]))
+        if isinstance(node, Expr):
+            for i, child in enumerate(node.children):
+                if isinstance(child, Expr) and child.op == '=':
+                    if len(child.children) != 2:  # noqa: PLR2004
+                        msg = 'Must have exactly two parts to equality'
+                        raise ValueError(msg)
+                    lhs, rhs = child.children
+                    self.equations.append((lhs, rhs))
+                    node.children[i] = lhs
 
     def replace_referents(self, node: Node):
         if isinstance(node, Expr):
@@ -48,7 +50,7 @@ class Constraints:
                 if isinstance(child, Constant):
                     node.children[i] = Symbol(str(child.value))
 
-    def disambiguate_axes(self, node: Node, curr_axes: Optional[MutableSequence[Node]] = None):
+    def disambiguate_axes(self, node: Node, curr_axes: Optional[MutableSequence[str]] = None):
         if curr_axes is None:
             curr_axes = []
         if isinstance(node, Expr):
@@ -71,7 +73,7 @@ class Constraints:
                 # use - because it's not allowed in user identifiers
                 node_value = f'{orig_value}-{num}'
 
-            curr_axes.append(Symbol(node_value))
+            curr_axes.append(node_value)
             if num > 1:
                 new_node = Symbol(node_value)
                 self.add_constraint(new_node, node)

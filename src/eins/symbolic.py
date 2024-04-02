@@ -200,7 +200,7 @@ def expanded_shape(node: Node) -> Sequence[Node]:
     elif node.op == '+':
         return [node]
 
-    msg = f'Unexpected node {node}'
+    msg = f'Unexpected node {node}, {node.op!r}'
     raise ValueError(msg)
 
 
@@ -264,24 +264,6 @@ def reverse_graph(root: Tensor):
 
 DEFAULT_COMBINE = ArrayCombination('multiply')
 DEFAULT_REDUCE = ArrayReduction('sum')
-
-
-def combine_mismatched(combine: Combine, tensors: Sequence[Tensor]) -> Tensor:
-    """Combines tensors together, broadcasting and transposing as needed. Assumes tensors are in
-    normal form."""
-    out = tensors[0]
-    for t in tensors[1:]:
-        new_axes = out.axes_list() + [ax for ax in t.axes_list() if ax not in out.axes_list()]
-        axs = t.axes_list()
-        perm = tuple(sorted(range(len(axs)), key=lambda x: new_axes.index(axs[x])))
-        transposed_t = Transpose(perm)(t)[0]
-        new_ax_op = ExpandTo(tuple(map(Symbol, new_axes)))
-        expanded_t = Program.apply_op(new_ax_op, transposed_t)[0]
-        expanded_out = Program.apply_op(new_ax_op, out)[0]
-        out = Program.apply_op(combine, (expanded_out, expanded_t))[0]
-    return out
-
-
 # *rolls eyes*
 MAX_ARROW_OPERANDS = 2
 
@@ -296,7 +278,7 @@ class Program:
         reduce_early: bool = True,  # noqa: FBT001, FBT002
     ):
         self.reduce_early = reduce_early
-
+        self.graph = {}
         if expr.op != '->':
             msg = f'Expected -> as operator, but got {expr.op}'
             raise ValueError(msg)
@@ -390,10 +372,32 @@ class Program:
                         if id(parent) == id(sink):
                             child.parents[i] = out
 
-    @ft.lru_cache
-    @staticmethod
-    def apply_op(op: ShapeOp, tensors: Union[Tensor, Sequence[Tensor]]):
-        return op(tensors)
+    def apply_op(self, op: ShapeOp, tensors: Union[Tensor, Sequence[Tensor]]):
+        if isinstance(tensors, Tensor):
+            tensors = [tensors]
+
+        key = (op, tuple(map(id, tensors)))
+        if key in self.graph:
+            return self.graph[key]
+        else:
+            res = op(tensors)
+            self.graph[key] = res
+            return res
+
+    def combine_mismatched(self, combine: Combine, tensors: Sequence[Tensor]) -> Tensor:
+        """Combines tensors together, broadcasting and transposing as needed. Assumes tensors are in
+        normal form."""
+        out = tensors[0]
+        for t in tensors[1:]:
+            new_axes = out.axes_list() + [ax for ax in t.axes_list() if ax not in out.axes_list()]
+            axs = t.axes_list()
+            perm = tuple(sorted(range(len(axs)), key=lambda x: new_axes.index(axs[x])))
+            transposed_t = Transpose(perm)(t)[0]
+            new_ax_op = ExpandTo(tuple(map(Symbol, new_axes)))
+            expanded_t = self.apply_op(new_ax_op, transposed_t)[0]
+            expanded_out = self.apply_op(new_ax_op, out)[0]
+            out = self.apply_op(combine, (expanded_out, expanded_t))[0]
+        return out
 
     @classmethod
     def parse(cls, op: str, **kwargs):
@@ -418,7 +422,7 @@ class Program:
         for s in start:
             axs = s.axes_list()
             perm = tuple(sorted(range(len(axs)), key=lambda x: start_axes.index(axs[x])))
-            transposed.extend(Program.apply_op(Transpose(perm), s))
+            transposed.extend(self.apply_op(Transpose(perm), s))
 
         if self.reduce_early:
             exp_axes = [set(exp.axes_list()) for exp in transposed]
@@ -427,7 +431,7 @@ class Program:
                 if i == 0:
                     continue
                 else:
-                    combined = combine_mismatched(Combine(self.combine), (combined, exp))
+                    combined = self.combine_mismatched(Combine(self.combine), (combined, exp))
 
                 in_rest = set()
                 for remaining_axes in exp_axes[i + 1 :]:
@@ -436,19 +440,17 @@ class Program:
                 # axes in the input, to reduce, that aren't in future tensors
                 to_reduce = (reduce_axes - in_rest) & set(combined.axes_list())
                 for r_ax in to_reduce:
-                    combined = Program.apply_op(Reduce(self.reduce[r_ax], Symbol(r_ax)), combined)[
-                        0
-                    ]
+                    combined = self.apply_op(Reduce(self.reduce[r_ax], Symbol(r_ax)), combined)[0]
             reduced = combined
         else:
             expanded = []
             for t in transposed:
-                expanded.extend(Program.apply_op(ExpandTo(tuple(map(Symbol, start_axes))), t))
-            combined = Program.apply_op(Combine(self.combine), tuple(expanded))[0]
+                expanded.extend(self.apply_op(ExpandTo(tuple(map(Symbol, start_axes))), t))
+            combined = self.apply_op(Combine(self.combine), tuple(expanded))[0]
 
             reduced = combined
             for ax in reduce_axes:
-                reduced = Program.apply_op(Reduce(self.reduce[ax], Symbol(ax)), reduced)[0]
+                reduced = self.apply_op(Reduce(self.reduce[ax], Symbol(ax)), reduced)[0]
 
         r_axs = reduced.axes_list()
         if set(r_axs) != set(goal_axes):
@@ -457,7 +459,7 @@ class Program:
 
         perm = tuple(sorted(range(len(r_axs)), key=lambda x: goal_axes.index(r_axs[x])))
 
-        out = Program.apply_op(Transpose(perm), reduced)[0]
+        out = self.apply_op(Transpose(perm), reduced)[0]
 
         if out.axes_list() != goal_axes:
             msg = f'{out.axes_list()} != {goal_axes}'

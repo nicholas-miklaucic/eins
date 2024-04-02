@@ -2,7 +2,7 @@
 
 import typing
 from itertools import chain
-from typing import AnyStr, Callable, Mapping, MutableMapping, Sequence, Union
+from typing import AnyStr, Callable, Mapping, MutableMapping, Optional, Sequence, Union
 
 from eins.combination import (
     ARRAY_COMBINE_OPS,
@@ -15,7 +15,7 @@ from eins.combination import (
 from eins.common_types import Array
 from eins.concrete import ArrayBackend
 from eins.elementwise import ElementwiseLiteral, ElementwiseOp, parse_elementwise
-from eins.parsing import Constant
+from eins.parsing import Constant, Symbol
 from eins.reduction import (
     ARRAY_REDUCE_OPS,
     CompositeReduction,
@@ -159,7 +159,15 @@ these operations or explicitly create objects using e.g., eins.ElementwiseOps.fr
 class EinsOp:
     """A computation on tensors, defined abstractly without specific inputs."""
 
-    def __init__(self, op: str, /, *, reduce: ReduceArg = 'sum', combine: CombineArg = 'multiply'):
+    def __init__(
+        self,
+        op: str,
+        /,
+        *,
+        reduce: ReduceArg = 'sum',
+        combine: CombineArg = 'multiply',
+        symbol_values: Optional[Mapping[str, int]] = None,
+    ):
         """
         A tensor operation that takes in tensors of the given shapes and outputs a tensor of the
         given shape. Has a generic, powerful shape description language that supports the majority
@@ -205,6 +213,9 @@ class EinsOp:
             A custom callable should be callable as `func(arr1, arr2)` and return an array of the
             same shape as the two inputs. `eins` makes no guarantees about the order combinations
             are performed, so this function should be commutative and associative.
+
+        symbol_values: mapping from symbols to integers or None
+            An alternative to using = to specify axis values.
         """
         if '->' not in op:
             msg = f'Einsop "{op}" has no "->", which is required'
@@ -220,6 +231,10 @@ class EinsOp:
         self.combine = _parse_combine_arg(combine)
 
         self.program = Program.parse(self.op_str, combine=self.combine, reduce=self.reduce)
+
+        self.symbol_values = symbol_values or {}
+        for k, v in self.symbol_values.items():
+            self.program.constr.add_constraint(Symbol(k), Constant(v))
 
     def __repr__(self) -> str:
         return f'EinsOp({self.op_str}, reduce={self.reduce}, combine={self.combine})'
@@ -275,10 +290,10 @@ class EinsOp:
                 if len(children) == 1:
                     # could be a many-to-one op
                     child = children[0]
-                    concrete_parents = [concrete[id(parent)] for parent in child.parents]
+                    concrete_parents = [concrete.get(id(parent)) for parent in child.parents]
                     if all(p is not None for p in concrete_parents):
                         # we can fill in this operation
-                        result = backend.do(concrete_parents, op, child.parents, [child])[0]
+                        result = backend.do(concrete_parents, op, child.parents, [child])[0]  # type: ignore
                         res = fill_from(child, result)
                         if res is not None:
                             return res
@@ -292,10 +307,17 @@ class EinsOp:
 
             return None
 
-        for src, arr in zip(self.program.sources, tensors):
-            ans = fill_from(src, arr)
-            if ans is not None:
-                return ans
+        try:
+            for src, arr in zip(self.program.sources, tensors):
+                ans = fill_from(src, arr)
+                if ans is not None:
+                    return ans
+        except ValueError as err:
+            msg = f"""
+Error occurred during computation.
+Program:\n{self.program}
+"""
+            raise ValueError(msg) from err
 
         msg = f'Could not solve tensor graph: {self.program}'
         raise ValueError(msg)

@@ -35,9 +35,9 @@ One of the design goals of `eins` is to be painless to use in almost any Python 
 
 `eins` is still in heavy development. Here's a sense of where we're headed.
 
-### Short-Term
+### Short-Term (days)
 
-- [ ] Better error reporting
+- [x] Better error reporting
 - [ ] `...` for batching over dynamic numbers of batch axes
 - [ ] Specifying intermediate results to control the order of reduction
 - [ ] Support `-` and `/` as natural pairs to `+` and `*`
@@ -47,18 +47,18 @@ One of the design goals of `eins` is to be painless to use in almost any Python 
 - [x] Flip order of inputs (logsumexp is log + sum + exp)
 - [ ] Unit array to indicate zero-dimensional tensors
 - [ ] Updating indexing syntax to match `eindex`
-- [ ] Much more thorough documentation and tests for existing functionality
+- [/] Much more thorough documentation and tests for existing functionality
 - [ ] Better visualization of the program graph
 - [ ] `@local` syntax
 
-### Near-Term
+### Near-Term (weeks)
 - [ ] Easy performance gains
 - [ ] Much better error reporting
 - [ ] Completing full support for tensor indexing
 - [ ] Warnings or errors for ambiguous expressions
 - [ ] Ways of visualizing and inspecting the computation graph
 
-### Long-Term
+### Long-Term (months)
 - [ ] Layers for popular ML frameworks?
 - [ ] Automatically optimizing the execution of a specific EinsOp for a specific computer and input size
 - [ ] Static typing support that shows the array shapes

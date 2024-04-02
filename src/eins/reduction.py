@@ -114,7 +114,7 @@ class PowerNorm(Reduction):
         if name and name[0] in ('L', 'l'):
             name = name[1:]
         if name.endswith('_norm'):
-            power = name[: len('_norm')]
+            power = name[: -len('_norm')]
             try:
                 power = float(power)
                 if not isnan(power):

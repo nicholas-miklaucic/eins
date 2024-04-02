@@ -7,7 +7,7 @@ from eins import Reductions as R  # noqa: N817
 from eins.common_types import Array
 
 # Set this to 'jax', 'numpy', or 'torch'
-BACKEND = 'torch'
+BACKEND = 'numpy'
 
 if BACKEND == 'jax':
     import jax.numpy as jnp
@@ -96,3 +96,11 @@ test_close(z4, z5)
 # Only computing pairwise distance for the first three points in each batch of x. x = randn(8, 6,
 # 32) y = randn(8, 6, 32) i = arr([0, 1, 2]) z1 = EinsOp('b n1 d, b n2 d, n1[3] -> b 3 n2',
 # combine='add', reduce='l2-norm')(x, -y, i)
+
+# Reshaping with needed hint
+x = randn(8, 64, 3)
+y1 = EinsOp('b (h w) c -> b h w c', symbol_values={'h': 4})(x)
+y2 = EinsOp('b (h=4 w) c -> b h w c')(x)
+y3 = EinsOp('b (h w=16) c -> b h w c')(x)
+test_close(y1, y2)
+test_close(y2, y3)
