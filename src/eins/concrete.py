@@ -75,7 +75,8 @@ class ArrayBackend:
 
                 return [x[0][tuple(slc)]]
             elif isinstance(op, Combine):
-                return [op.method(*xp.broadcast_arrays(*x))]
+                # return [op.method(*xp.broadcast_arrays(*x))]
+                return [op.method(*x)]
             elif isinstance(op, Reduce):
                 # print(ins, _outs, op, id(_outs[0]))
                 return [op.method(x[0], axis=ins[0].axes.index(op.axis))]

@@ -132,8 +132,13 @@ class PowerNorm(Reduction):
                 return xp.max(xp.abs(arr), axis=axis)
             elif self.power == float('-inf'):
                 return xp.min(xp.abs(arr), axis=axis)
+            # Faster special-cases:
+            elif self.power == 1:
+                return xp.sum(xp.abs(arr), axis=axis)
+            elif self.power == 2:
+                return xp.sqrt(xp.sum(xp.square(arr), axis=axis))
             else:
-                return xp.pow(xp.sum(xp.abs(arr) ** self.power, axis=axis), 1 / self.power)
+                return xp.sum(xp.abs(arr) ** self.power, axis=axis) ** (1 / self.power)
         else:
             msg = f'Cannot compute reduction for non-Array {arr} of type {type(arr)}'
             raise ValueError(msg)

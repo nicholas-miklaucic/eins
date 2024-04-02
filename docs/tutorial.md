@@ -63,6 +63,18 @@ handle constant sizes properly.
 EinsOp('b (n 3) -> b n 3')(ims)
 ```
 
+## Specifying Shapes
+
+Sometimes, you will need to tell Eins a specific axis. (Often, you can resolve this by doing
+whatever you're going to do next and letting Eins infer using that shape.) There are two ways to do
+that: through the `symbol_values` argument, or by using `=` with constant values:
+
+```py
+EinsOp('b (h w) c -> b h w c', symbol_values={'h': 4, 'w': 16})(ims)
+EinsOp('b (h=4 w) c -> b h w c')(ims)
+EinsOp('b (h w=16) c -> b h w c')(ims)
+```
+
 ## Concatenation
 
 An axis of shape `(h w)` has h × w values, and in fact Eins will let you write that as `h*w` if you prefer. Eins also
@@ -103,5 +115,5 @@ EinsOp('batch n1 d, batch n2 d -> batch n1 n2',
 
 `combine='add'` means we're adding together the elements: when we pass in `pts1` and `-pts2`, this computes a
 broadcasted version of `pts1 - pts2`. We then eliminate the `d` axis by computing the Euclidean norm, given by
-`reduce='l2-norm'`.
+`reduce='l2_norm'`.
 

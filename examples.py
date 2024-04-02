@@ -99,7 +99,7 @@ test_close(z4, z5)
 
 # Reshaping with needed hint
 x = randn(8, 64, 3)
-y1 = EinsOp('b (h w) c -> b h w c', symbol_values={'h': 4})(x)
+y1 = EinsOp('b (h w) c -> b h w c', symbol_values={'h': 4, 'w': 16})(x)
 y2 = EinsOp('b (h=4 w) c -> b h w c')(x)
 y3 = EinsOp('b (h w=16) c -> b h w c')(x)
 test_close(y1, y2)

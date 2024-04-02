@@ -262,6 +262,24 @@ def reverse_graph(root: Tensor):
         raise ValueError
 
 
+def optimal_supersequence(axes: Sequence[Sequence[str]]):
+    """
+    Computes an ordering for the superset of the given axes that minimizes the number of
+    transpositions.
+
+    At least from preliminary testing, the exact permutation in a transposition has a small impact
+    on its cost relative to whether one is performed at all. As such, the goal is to minimize the
+    *number* of arrays that need to be transposed and the number of elements per transposed array,
+    not the transpositions themselves.
+
+    Examples:
+
+    optimal_supersequence([['a', 'b', 'd'], ['a', 'c', 'd']]) == ['a', 'b', 'c', 'd']
+    optimal_supersequence(['abcd', 'cba', 'dcb') == ['d', 'c', 'b', 'a']
+    """
+    pass
+
+
 DEFAULT_COMBINE = ArrayCombination('multiply')
 DEFAULT_REDUCE = ArrayReduction('sum')
 # *rolls eyes*
@@ -387,6 +405,8 @@ class Program:
     def combine_mismatched(self, combine: Combine, tensors: Sequence[Tensor]) -> Tensor:
         """Combines tensors together, broadcasting and transposing as needed. Assumes tensors are in
         normal form."""
+        # We want to find an order of axes that can avoid transpositions. For example, the best way
+        # to broadcast a b c and a d c is a b d c, not a b c d or a d c b.
         out = tensors[0]
         for t in tensors[1:]:
             new_axes = out.axes_list() + [ax for ax in t.axes_list() if ax not in out.axes_list()]
