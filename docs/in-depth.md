@@ -1,13 +1,12 @@
-# Eins In Depth
+# Advanced Eins
 
-If you just want examples of common operations in Eins, consult the [tutorial](tutorial.md). If you're interested in
-maximizing the power of Eins, you're in the right place!
+If you're totally new to Eins or `einops` and want to see what the fuss is about, read the [tutorial](tutorial.md). If you just want examples of common operations in Eins, consult the [cookbook](tutorial.md). If you're interested in maximizing the power of Eins, you're in the right place!
 
 ```py
 from eins import EinsOp
 ```
 
-## Mathematical Functions
+## Beyond Tensor Shapes
 
 Consider an operation `a b, b c -> a c`. This could be matrix multiplication, but it could also be pairwise distances or
 many other things. To control the computation that's being performed beyond the shapes of the inputs and output, Eins
@@ -50,7 +49,11 @@ return the same shape.
 
 Just like a folded combination becomes a reduction, a *scanned* or *accumulated* combination becomes a transformation.
 Note that the way NumPy and other libraries notate these differs from the idea of a scan. `cumprod`, in Eins, is really
-just an alias for `cummultiply`, because Eins uses the combination rather than the reduction.
+just an alias for `cummultiply`, because Eins uses the combination rather than the reduction. If you have an array with elements `[a, b, c, d]` and an operator like `*`, then Eins computes
+
+```
+[a, a * b, (a * b) * c, ((a * b) * c) * d]
+```
 
 **Common examples**: `'sort'`, `'l2_normalize'`, `'min_max_normalize'`
 
@@ -63,7 +66,7 @@ Functions are applied right-to-left, matching existing nomenclature and function
 `'logaddexp'` weren't already a supported combination, you could replicate the functionality as `('log', 'add', 'exp')`.
 This computes the logarithm of the sum of the exponentials of the inputs.
 
-Similarly, if you wanted to compute root-mean-square error along an axis, you could use `reduce=('sqrt', 'mean', 'square')`.
+Similarly, if you wanted to compute root-mean-square error along an axis, you could use `reduce=('sqrt', 'mean', 'square')`. This is common enough to get its own name: `reduce='l2-norm'`. 
 
 ### Explicit Function Objects
 
@@ -73,8 +76,7 @@ harder to know what functions Eins defines or use your own.
 
 If you prefer, you can instead pass in explicit objects: `Combination`, `Reduction`, `ElementwiseOp`, and
 `Transformation`. These are each base classes that you can implement yourself, but it's easiest to use the associated
-object exported from the base namespace: `Combinations`, `Reductions`, etc. These have methods for creating different
-kinds of functions and class constants for the pre-defined functions you're most likely to use.
+object exported from the base namespace: `Combinations`, `Reductions`, etc. These namespaces provide an autocomplete-friendly way of using these operations. 
 
 Explicit objects are the only way to specify compositions with function syntax. If you pass in a callable to `combine`
 or `reduce`, Eins will assume it has the correct signature, but if you pass in `(my_func1, my_func2)` Eins has no way of
@@ -87,7 +89,26 @@ from scipy.stats import kurtosis
 
 # Batched absolute value kurtosis: measures non-normality
 EinsOp(
-  'batch dim -> batch'
+  'batch sample_size -> batch'
   reduce = (E.abs, R.from_func(kurtosis))
 )
+```
+
+## Standalone Operator Usage
+
+For backend-agnostic code or simply as a wrapper for functionality Eins implements that isn't available in all libraries, there's no reason you can't just use the above functions outside of an EinsOp context:
+
+```python
+from eins import Reductions as R
+from eins import Transformations as T
+
+# 1.5-norm: somewhere between Manhattan and Euclidean distance
+# akin to torch.nn.functional.normalize, but no direct numpy equivalent
+
+data = np.random.randn(128, 64)
+
+R.PowerNorm(1.5)(data, axis=1)
+
+# Normalize so the 1.5-norm is 1: same shape as input
+T.PowerNormalize(1.5)(data, axis=1)
 ```

@@ -10,14 +10,16 @@ What if most of your machine learning model code could be replaced by a single o
 As an example, here's [the patch embedding from a vision transformer](https://nn.labml.ai/transformers/vit/index.html#PatchEmbeddings):
 ```python
 linear = EinsOp('b (n_p patch) (n_p patch) c, (patch patch c) emb -> b (n_p n_p) emb')
+add_bias = EinsOp('b (n_p n_p) emb, emb -> b (n_p n_p) emb', combine='add')
 
 kernel = randn(5 * 5 * 3, 12)
+bias = randn(12)
 images = randn(4, 55, 55, 3)
-patches = linear(images, kernel)
+patches = add_bias(linear(images, kernel), bias)
 print(patches.shape)  # (4, 121, 12)
 ```
 
-This takes in a batch of square images: `b` images in a batch, `c` channels, and height and width both divisible into `n_p` patches of size `patch`. It combines those images with an embedding layer that takes each of the `patch * patch * c` values in a patch and produces a vector of length `emb`.
+This takes in a batch of square images: `b` images in a batch, `c` channels, and height and width both divisible into `n_p` patches of size `patch`. It combines those images with an embedding layer that takes each of the `patch * patch * c` values in a patch and produces a vector of length `emb`, adding a `bias` that's shared across all of the values for a single dimension of the embedding.
 
 If you've used the wonderful [`einops`](https://github.com/arogozhnikov/einops), then think of `eins` as `einops` with a more ambitious goal—being the only operation you should need for your next deep learning project.
 

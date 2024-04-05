@@ -3,8 +3,8 @@ site_name: Eins
 nav:
   - Home: index.md
   - Tutorial: tutorial.md
-  - Eins In Depth: in-depth.md
-  - API: $api/eins.***
+  - Advanced Eins: in-depth.md
+  - API Reference: $api/eins.***
 
 plugins:
 - search
