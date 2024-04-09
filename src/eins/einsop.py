@@ -1,5 +1,6 @@
 """User-facing API."""
 
+from string import ascii_uppercase
 import typing
 from itertools import chain
 from typing import AnyStr, Callable, Mapping, MutableMapping, Optional, Sequence, Union
@@ -24,7 +25,9 @@ from eins.reduction import (
     ReductionLiteral,
     parse_reduction,
 )
-from eins.symbolic import Program, Tensor
+from eins.strategy import BaseStrategy
+from eins.program import Program
+from eins.symbolic import Tensor
 from eins.transformation import Transformation, TransformationLiteral, parse_transformation
 
 ElementwiseKind = Union[ElementwiseLiteral, Callable, ElementwiseOp]
@@ -175,10 +178,10 @@ class EinsOp:
 
         Parameters
         ----------
-        op:
+        op: str
             The description of the operation. For example, `'a b, b c -> a c'` performs matrix
             multiplication, and `'batch (size size) channels -> batch size size channels'` unpacks a
-            batch of square images.
+            batch of square images. Any amount of whitespace can surround `->` and `,`.
 
         reduce: function f(Array, axis: int) → Array, Reduction, str, or mapping from axes to
         previous
@@ -203,7 +206,8 @@ class EinsOp:
             'c': 'min'}` has two meanings, depending on which happens first. Instead, you can pass
             `'a b c -> a b -> a'`, which forces a specific order.
 
-        combine:
+        combine: function f(Array, Array) → Array, Combination, str, or mapping from axes to
+        previous
             Describes how the elements of different input tensors are combined: use
             [eins.Combinations] to get an autocomplete-friendly list of options. The default is
             `'multiply'`, which is what `einsum` does. This can be a list of elementwise operations
@@ -239,6 +243,42 @@ class EinsOp:
     def __repr__(self) -> str:
         return f'EinsOp({self.op_str}, reduce={self.reduce}, combine={self.combine})'
 
+    def __str__(self) -> str:
+        names = {}
+
+        def get_name(tens_id, names=names):
+            if tens_id in names:
+                return names[tens_id]
+            else:
+                name_symbols = ascii_uppercase
+                if len(names) < len(name_symbols):
+                    suffix = ''
+                else:
+                    suffix = str(len(names) // len(name_symbols) - 1)
+
+                name_sym_base = name_symbols[len(names) % len(name_symbols)]
+                name_sym = f'{name_sym_base}{suffix}'
+                names[tens_id] = name_sym
+                return name_sym
+
+        out = [repr(self)]
+        if hasattr(self, 'instructions') and self.instructions:
+            # has graph
+            out.append('Execution Graph:\n')
+            for op, sources, sinks in self.instructions:
+                source_str = ', '.join(
+                    [get_name(i) + '{' + str(self.abstract[i]) + '}' for i in sources]
+                )
+
+                sink_str = ', '.join(
+                    [get_name(i) + '{' + str(self.abstract[i]) + '}' for i in sinks]
+                )
+                out.append(f'{op!s:>60}\t{source_str:>40} → {sink_str:<25}')
+
+        out.append('Constraints:')
+        out.append(str(self.program.constr))
+        return '\n'.join(out)
+
     def __call__(self, *tensors: Array) -> Array:
         """
         Apply the operation to the given tensors, returning the output tensor.
@@ -272,15 +312,20 @@ class EinsOp:
             msg = f'Could not solve: free variables {self.program.constr.free_vars} remain'
             raise ValueError(msg)
 
-        backend = ArrayBackend(self.program.constr)
+        self.strat = BaseStrategy(self.program)
 
-        abstract: MutableMapping[int, Tensor] = {}
-        concrete: MutableMapping[int, Array] = {}
+        self.program.make_path(self.strat)
 
-        def fill_from(src: Tensor, arr: Array):
+        self.backend = ArrayBackend(self.program.constr)
+        self.instructions = []
+
+        self.abstract: MutableMapping[int, Tensor] = {}
+        self.concrete: MutableMapping[int, Array] = {}
+
+        def fill_from(src: Tensor, arr: Array, instructions=self.instructions):
             """Fills forward from the known tensor. Returns the answer, if found."""
-            concrete[id(src)] = arr
-            abstract[id(src)] = src
+            self.concrete[id(src)] = arr
+            self.abstract[id(src)] = src
 
             if len(src.children) == 0:
                 # we're done
@@ -290,16 +335,19 @@ class EinsOp:
                 if len(children) == 1:
                     # could be a many-to-one op
                     child = children[0]
-                    concrete_parents = [concrete.get(id(parent)) for parent in child.parents]
+                    concrete_parents = [self.concrete.get(id(parent)) for parent in child.parents]
                     if all(p is not None for p in concrete_parents):
                         # we can fill in this operation
-                        result = backend.do(concrete_parents, op, child.parents, [child])[0]  # type: ignore
+                        result = self.backend.do(concrete_parents, op, child.parents, [child])[0]
+                        instructions.append((op, list(map(id, child.parents)), [id(child)]))
+                        # type: ignore
                         res = fill_from(child, result)
                         if res is not None:
                             return res
                 else:
                     # no many-to-many ops: we can fill in all of these
-                    child_results = backend.do([arr], op, [src], children)
+                    child_results = self.backend.do([arr], op, [src], children)
+                    instructions.append((op, [id(src)], list(map(id, children))))
                     for child, result in zip(children, child_results):
                         res = fill_from(child, result)
                         if res is not None:
@@ -311,6 +359,9 @@ class EinsOp:
             for src, arr in zip(self.program.sources, tensors):
                 ans = fill_from(src, arr)
                 if ans is not None:
+                    self.abstract[id(ans)] = self.program.orig_sink
+                    # the concrete arrays are large: we don't want to store them indefinitely
+                    self.concrete.clear()
                     return ans
         except ValueError as err:
             msg = f"""

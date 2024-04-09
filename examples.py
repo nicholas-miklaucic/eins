@@ -58,7 +58,9 @@ def test_close(a: Array, b: Array):
 # Simple matrix multiplication
 x = randn(32, 64)
 y = randn(64, 16)
-z = EinsOp('a b, b c -> a c')(x, y)
+op = EinsOp('a b, b c -> a c')
+z = op(x, y)
+# print(op)
 test_close(z, x @ y)
 
 # Patch embedding from Vision Transformer. Take batches of (I * p) x (I * p) images and embed with a
@@ -80,10 +82,13 @@ patches = affine(patches, bias)
 # Batched pairwise Euclidean distance.
 x = randn(8, 6, 32)
 y = randn(8, 6, 32)
-z1 = EinsOp('b n1 d, b n2 d -> b n1 n2', combine='add', reduce='l2_norm')(x, -y)
+op = EinsOp('b n1 d, b n2 d -> b n1 n2', combine='add', reduce='l2_norm')
+z1 = op(x, -y)
 z2 = EinsOp('b n1 d, b n2 d -> b n1 n2', combine='add', reduce=('sqrt', 'sum', 'square'))(x, -y)
 z3 = EinsOp('b n1 d, b n2 d -> b n1 n2', combine='add', reduce='hypot')(x, -y)
 z4 = EinsOp('b n1 d, b n2 d -> b n1 n2', combine='add', reduce=R.l2_norm)(x, -y)
+
+print(op)
 
 # Version without eins. Note how easy it would be to write x[:, None, ...] - y[:, :, None, ...],
 # which would lead to the transposed version of the pairwise distances you want.

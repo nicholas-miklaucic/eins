@@ -32,6 +32,9 @@ class ArrayCombination(Combination):
 
     func_name: str
 
+    def __repr__(self):
+        return repr(self.func_name)
+
     def __str__(self):
         return self.func_name
 
