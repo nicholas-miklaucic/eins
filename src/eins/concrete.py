@@ -16,6 +16,7 @@ from eins.symbolic import (
     ShapeOp,
     Split,
     Tensor,
+    Tile,
     Transpose,
 )
 
@@ -74,6 +75,21 @@ class ArrayBackend:
                         slc.append(None)
 
                 return [x[0][tuple(slc)]]
+            elif isinstance(op, Tile):
+                tiles = []
+                if len(op.new_shape) != len(x[0].shape):
+                    msg = f'Shape {x[0].shape} cannot be tiled to{op.new_shape}: shapes must match.'
+                    raise ValueError(msg)
+
+                for out_ax, in_len in zip(op.new_shape, x[0].shape):
+                    out_len = self.constr.value_of(out_ax)
+                    if out_len % in_len != 0:
+                        msg = f'Cannot tile: {in_len} does not divide {out_len}'
+                        msg += f': {x[0]}, {op.new_shape}'
+                        raise ValueError(msg)
+                    tiles.append(out_len // in_len)
+
+                return [xp.tile(x[0], tuple(tiles))]
             elif isinstance(op, Combine):
                 # return [op.method(*xp.broadcast_arrays(*x))]
                 return [op.method(*x)]

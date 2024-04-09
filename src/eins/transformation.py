@@ -11,10 +11,12 @@ import warnings
 from dataclasses import dataclass
 from itertools import accumulate, chain
 from typing import Callable, Literal, Optional, Union, cast
+import array_api_compat
 
 from eins.combination import Combination, parse_combination
 from eins.common_types import Array, Transformation
-from eins.reduction import PowerNorm
+from eins.elementwise import parse_elementwise
+from eins.reduction import PowerNorm, parse_reduction
 from eins.utils import array_backend
 
 # cumsum is the numpy version, so we support that name in addition to the Array API cumulative sum
@@ -129,7 +131,7 @@ class PowerNormalize(Transformation):
         xp = array_backend(arr)
         if xp is not None:
             norm = xp.expand_dims(self.norm(arr, axis=axis), axis=axis)
-            return xp / xp.maximum(norm, self.eps)
+            return arr / xp.maximum(norm, self.eps)
         else:
             msg = f'Cannot normalize non-Array {arr} of type {type(arr)}'
             raise ValueError(msg)
@@ -138,6 +140,7 @@ class PowerNormalize(Transformation):
 QuantileLiteral = Literal['quantile', 'min_max_normalize']
 
 
+@dataclass(frozen=True, unsafe_hash=True)
 class Quantile(Transformation):
     """
     Transforms data so 0 is the minimum and 1 is the maximum. Can be thought of as min-max
@@ -159,13 +162,107 @@ class Quantile(Transformation):
             lo = xp.expand_dims(xp.min(arr, axis=axis), axis=axis)
             hi = xp.expand_dims(xp.max(arr, axis=axis), axis=axis)
 
-            return (xp - lo) / xp.maximum(hi - lo, self.eps)
+            return (arr - lo) / xp.maximum(hi - lo, self.eps)
         else:
             msg = f'Cannot min-max normalize non-Array {arr} of type {type(arr)}'
             raise ValueError(msg)
 
 
-@dataclass
+@dataclass(frozen=True, unsafe_hash=True)
+class BackendDelegated(Transformation):
+    """
+    Operation that is delegated to different backend function calls.
+
+    A generic Array-API-compatible version is also required, so this isn't for backend-specific
+    logic: that should be a custom callable. This is for, e.g., softmax: there are specific
+    performance-optimized versions we'd like to use, but we can implement it ourselves if we need to
+    (e.g., in numpy, which doesn't have softmax).
+
+    Strings are members of a submodule of the overarching module for each array API, which helps
+    avoid requiring any of the individual backends.
+    """
+
+    generic: Callable
+    numpy: Union[Callable, str, None]
+    jax: Union[Callable, str, None]
+    torch: Union[Callable, str, None]
+
+    @staticmethod
+    def get_method(func_or_name: Union[Callable, str], module: str):
+        if isinstance(func_or_name, str):
+            if '.' in func_or_name:
+                # has submodule, import that
+                mod_name, func_name = func_or_name.rsplit('.', maxsplit=1)
+                mod_name = '.' + mod_name
+            else:
+                mod_name = ''
+                func_name = func_or_name
+            mod = __import__(module + mod_name, fromlist=[''])
+            return getattr(mod, func_name)
+        else:
+            return func_or_name
+
+    def __call__(self, arr: Array, axis: int = 0) -> Array:
+        if array_api_compat.is_torch_array(arr):
+            module = 'torch'
+        elif array_api_compat.is_jax_array(arr):
+            module = 'jax'
+        elif array_api_compat.is_numpy_array(arr):
+            module = 'numpy'
+        else:
+            return self.generic(arr, axis=axis)
+
+        func = getattr(self, module)
+        if func is None:
+            func = self.generic
+
+        return self.get_method(func, module)(arr, axis=axis)
+
+
+def _generic_softmax(arr: Array, axis: int = 0) -> Array:
+    """
+    Generic default softmax implementation.
+    """
+    # https://github.com/scipy/scipy/blob/7dcd8c59933524986923cde8e9126f5fc2e6b30b/scipy/special/_logsumexp.py#L231
+
+    # log-sum-exp trick is important
+    xp = array_backend(arr)
+    amax = xp.expand_dims(xp.max(arr, axis=axis), axis=axis)
+    exp_shifted = xp.exp(arr - amax)
+
+    return PowerNormalize.parse('l1_normalize')(exp_shifted)
+
+
+_SoftmaxDelegate = BackendDelegated(
+    generic=_generic_softmax, numpy=None, jax='nn.softmax', torch='.nn.functional.softmax'
+)
+
+
+@dataclass(frozen=True, unsafe_hash=True)
+class Softmax(Transformation):
+    """
+    Softmax normalization. Delegates to array backends, so should have the same performance/behavior
+    as their code.
+
+    Has a user-specified temperature, defaulting to the standard softmax with 1. Inputs are divided
+    by the temperature before softmax is applied: higher values mean the distribution is more
+    uniform. This can't be parsed for now, so the only option is the standard 'softmax'.
+    """
+
+    temperature: float = 1
+
+    @classmethod
+    def parse(cls, _name: str) -> Optional[Transformation]:
+        if _name == 'softmax':
+            return cls()
+        else:
+            return None
+
+    def __call__(self, arr: Array, axis: int = 0) -> Array:
+        return _SoftmaxDelegate(arr / self.temperature, axis=axis)
+
+
+@dataclass(frozen=True, unsafe_hash=True)
 class CustomTransformation(Transformation):
     """
     Reduction using a user-defined function.
@@ -180,7 +277,7 @@ class CustomTransformation(Transformation):
 
 
 def parse_transformation(name: str) -> Optional[Transformation]:
-    for cls in (ArrayTransformation, Scan, PowerNormalize, Quantile):
+    for cls in (ArrayTransformation, Scan, PowerNormalize, Quantile, Softmax):
         parse = cls.parse(name)
         if parse is not None:
             return parse

@@ -48,7 +48,9 @@ class Constraints:
         if isinstance(node, Expr):
             for i, child in enumerate(node.children):
                 if isinstance(child, Constant):
+                    sym = Symbol(str(child.value))
                     node.children[i] = Symbol(str(child.value))
+                    self.equations.append((sym, child))
 
     def disambiguate_axes(self, node: Node, curr_axes: Optional[MutableSequence[str]] = None):
         if curr_axes is None:

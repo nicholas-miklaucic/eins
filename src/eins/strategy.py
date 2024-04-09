@@ -5,7 +5,7 @@ from typing import Sequence, Union
 
 from eins.parsing import Symbol
 from eins.program import Program
-from eins.symbolic import Combine, ExpandTo, Reduce, ShapeOp, Tensor, Transpose
+from eins.symbolic import Combine, ExpandTo, Reduce, ShapeOp, Tensor, Tile, Transpose
 
 
 class BaseStrategy:
@@ -114,17 +114,22 @@ class BaseStrategy:
             combined = self.apply_op(Combine(self.prog.combine), tuple(expanded))[0]
 
             reduced = combined
-            for ax in reduce_axes:
+
+        for ax in reduce_axes:
+            if ax in reduced.axes_list():
                 reduced = self.apply_op(Reduce(self.prog.reduce[ax], Symbol(ax)), reduced)[0]
 
         r_axs = reduced.axes_list()
-        if set(r_axs) != set(goal_axes):
-            msg = f'{r_axs} != {goal_axes}'
-            raise ValueError(msg)
 
         perm = tuple(sorted(range(len(r_axs)), key=lambda x: goal_axes.index(r_axs[x])))
 
         out = self.apply_op(Transpose(perm), reduced)[0]
+
+        # expansion if necessary
+        # TODO should there be some kind of warning here? this makes some syntax ambiguous
+        if set(out.axes_list()) < set(goal_axes):
+            out = self.apply_op(ExpandTo(tuple(goal.axes)), out)[0]
+            out = self.apply_op(Tile(tuple(goal.axes)), out)[0]
 
         if out.axes_list() != goal_axes:
             msg = f'{out.axes_list()} != {goal_axes}'

@@ -3,11 +3,11 @@
 from typing import cast
 
 from eins import EinsOp
-from eins import Reductions as R  # noqa: N817
+from eins import Reductions as R, Transformations as T  # noqa: N817
 from eins.common_types import Array
 
 # Set this to 'jax', 'numpy', or 'torch'
-BACKEND = 'numpy'
+BACKEND = 'jax'
 
 if BACKEND == 'jax':
     import jax.numpy as jnp
@@ -77,6 +77,17 @@ patches = linear(images, kernel)
 
 affine = EinsOp('batch (I I) embed_dim, embed_dim -> batch (I I) embed_dim', combine='add')
 patches = affine(patches, bias)
+
+# Expansion
+x = randn(8, 64, 3)
+
+y1 = EinsOp('a b c -> a (b c) 4')(x)
+y2 = xp.tile(x.reshape(x.shape[0], -1)[..., None], (1, 1, 4))
+test_close(y1, y2)
+
+op = EinsOp('a d 4 -> d 4', reduce=('sum', 'softmax'))
+z1 = op(y1)
+test_close(z1, xp.ones_like(y1[0, ...]))
 
 
 # Batched pairwise Euclidean distance.

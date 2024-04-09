@@ -200,6 +200,9 @@ class CompositeReduction(Reduction):
                     raise ValueError(msg)
                 out = op(out, axis=axis)
             elif isinstance(op, Transformation):
+                if reductions == 1:
+                    msg = f'{self} is invalid. Cannot transform after reducing.'
+                    msg += '\nPerhaps you meant the reverse? Sequences are applied right-to-left.'
                 out = op(out, axis=axis)
             else:
                 out = op(out)

@@ -8,7 +8,7 @@ from eins.reduction import Fold as _Fold
 from eins.reduction import PowerNorm as _PowerNorm
 from eins.reduction import ops as _reduction_ops
 from eins.transformation import CustomTransformation
-from eins.transformation import PowerNormalize as _PowerNormalize
+from eins.transformation import PowerNormalize as _PowerNormalize, Softmax as _Softmax
 from eins.transformation import Scan as _Scan
 from eins.transformation import ops as _transformation_ops
 
@@ -88,6 +88,7 @@ class Transformations:
     """Namespace for built-in transformation operations."""
 
     PowerNormalize = _PowerNormalize
+    Softmax = _Softmax
     Scan = _Scan
     sort = _transformation_ops['sort']
     cumulative_sum = _transformation_ops['cumulative_sum']

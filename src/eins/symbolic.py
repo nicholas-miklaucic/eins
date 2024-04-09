@@ -157,6 +157,17 @@ class ExpandTo(ShapeOp):
 
 
 @dataclass(unsafe_hash=True)
+class Tile(ShapeOp):
+    """Repeats values along axes to go from an array broadcastable with a shape to an array that
+    exactly matches a shape."""
+
+    new_shape: Sequence[Node]
+
+    def apply(self, tensors: Sequence[Tensor]) -> Sequence[Tensor]:  # noqa: ARG002
+        return [Tensor(Expr(' ', list(self.new_shape)))]
+
+
+@dataclass(unsafe_hash=True)
 class Combine(ShapeOp):
     method: Combination
 
