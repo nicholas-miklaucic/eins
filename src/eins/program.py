@@ -9,6 +9,7 @@ from eins.combination import ArrayCombination
 from eins.common_types import Combination, Reduction
 from eins.constraint import Constraints, postprocess_ast
 from eins.parsing import Constant, Expr, Node, Symbol, make_expr, unpack_shorthands
+from eins.parsing import expr as expr_parser
 from eins.reduction import ArrayReduction
 from eins.symbolic import (
     Concat,
@@ -17,7 +18,6 @@ from eins.symbolic import (
     ShapeOp,
     Split,
     Tensor,
-    expr_parser,
 )
 
 EXP_ARITY = 2

@@ -1,6 +1,6 @@
 import re
 from dataclasses import dataclass
-from typing import Callable, MutableSequence, Sequence, Union
+from typing import Callable, MutableSequence, Union
 
 import pyparsing as pp
 

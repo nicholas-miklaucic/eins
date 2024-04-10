@@ -1,19 +1,14 @@
 """Symbolic representation of tensor operations and manipulations."""
 
-import functools as ft
 import pprint
 from abc import ABCMeta, abstractmethod
-from collections import defaultdict
 from copy import deepcopy
 from dataclasses import dataclass
-from itertools import chain
-from typing import Mapping, MutableSequence, Sequence, Union, cast
+from typing import MutableSequence, Sequence, Union
 
-from eins.combination import ArrayCombination, Combination
-from eins.constraint import Constraints, postprocess_ast
-from eins.parsing import Constant, Expr, Node, Symbol, make_expr, unpack_shorthands
-from eins.parsing import expr as expr_parser
-from eins.reduction import ArrayReduction, Reduction
+from eins.combination import Combination
+from eins.parsing import Constant, Expr, Node, Symbol
+from eins.reduction import Reduction
 
 
 class Tensor:

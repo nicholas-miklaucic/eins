@@ -1,8 +1,8 @@
 """User-facing API."""
 
-from string import ascii_uppercase
 import typing
 from itertools import chain
+from string import ascii_uppercase
 from typing import AnyStr, Callable, Mapping, MutableMapping, Optional, Sequence, Union
 
 from eins.combination import (
@@ -17,6 +17,7 @@ from eins.common_types import Array
 from eins.concrete import ArrayBackend
 from eins.elementwise import ElementwiseLiteral, ElementwiseOp, parse_elementwise
 from eins.parsing import Constant, Symbol
+from eins.program import Program
 from eins.reduction import (
     ARRAY_REDUCE_OPS,
     CompositeReduction,
@@ -26,7 +27,6 @@ from eins.reduction import (
     parse_reduction,
 )
 from eins.strategy import BaseStrategy
-from eins.program import Program
 from eins.symbolic import Tensor
 from eins.transformation import Transformation, TransformationLiteral, parse_transformation
 

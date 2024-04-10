@@ -11,12 +11,12 @@ import warnings
 from dataclasses import dataclass
 from itertools import accumulate, chain
 from typing import Callable, Literal, Optional, Union, cast
+
 import array_api_compat
 
 from eins.combination import Combination, parse_combination
 from eins.common_types import Array, Transformation
-from eins.elementwise import parse_elementwise
-from eins.reduction import PowerNorm, parse_reduction
+from eins.reduction import PowerNorm
 from eins.utils import array_backend
 
 # cumsum is the numpy version, so we support that name in addition to the Array API cumulative sum
@@ -193,11 +193,10 @@ class BackendDelegated(Transformation):
             if '.' in func_or_name:
                 # has submodule, import that
                 mod_name, func_name = func_or_name.rsplit('.', maxsplit=1)
-                mod_name = '.' + mod_name
             else:
                 mod_name = ''
                 func_name = func_or_name
-            mod = __import__(module + mod_name, fromlist=[''])
+            mod = __import__('.'.join((module, mod_name)), fromlist=[''])
             return getattr(mod, func_name)
         else:
             return func_or_name
@@ -216,7 +215,12 @@ class BackendDelegated(Transformation):
         if func is None:
             func = self.generic
 
-        return self.get_method(func, module)(arr, axis=axis)
+        try:
+            return self.get_method(func, module)(arr, axis=axis)
+        except TypeError:
+            # try using dim= instead of axis=
+            # works for torch
+            return self.get_method(func, module)(arr, dim=axis)
 
 
 def _generic_softmax(arr: Array, axis: int = 0) -> Array:
@@ -234,7 +238,7 @@ def _generic_softmax(arr: Array, axis: int = 0) -> Array:
 
 
 _SoftmaxDelegate = BackendDelegated(
-    generic=_generic_softmax, numpy=None, jax='nn.softmax', torch='.nn.functional.softmax'
+    generic=_generic_softmax, numpy=None, jax='nn.softmax', torch='nn.functional.softmax'
 )
 
 

@@ -8,7 +8,7 @@ from eins import Transformations as T
 from eins.common_types import Array
 
 # Set this to 'jax', 'numpy', or 'torch'
-BACKEND = 'jax'
+BACKEND = 'torch'
 
 if BACKEND == 'jax':
     import jax.numpy as jnp

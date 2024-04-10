@@ -1,8 +1,8 @@
 """Concrete implementations of the shape operations."""
 
-from typing import Sequence
+from typing import Sequence, cast
 
-from array_api_compat import array_namespace
+from array_api_compat import array_namespace, is_jax_array
 
 from eins.common_types import Array
 from eins.constraint import Constraints
@@ -76,6 +76,8 @@ class ArrayBackend:
 
                 return [x[0][tuple(slc)]]
             elif isinstance(op, Tile):
+                # Tile isn't in the version of the Array API that the Array API supports,
+                # annoyingly. We try to wrap it as best we can.
                 tiles = []
                 if len(op.new_shape) != len(x[0].shape):
                     msg = f'Shape {x[0].shape} cannot be tiled to{op.new_shape}: shapes must match.'
@@ -89,7 +91,20 @@ class ArrayBackend:
                         raise ValueError(msg)
                     tiles.append(out_len // in_len)
 
-                return [xp.tile(x[0], tuple(tiles))]
+                if hasattr(xp, 'tile'):
+                    return [xp.tile(x[0], tuple(tiles))]
+                elif is_jax_array(x[0]):
+                    # workaround: use jnp.tile
+                    from jax.numpy import tile
+                    from jax.typing import ArrayLike
+
+                    return [tile(cast(ArrayLike, x[0]), tuple(tiles))]
+                else:
+                    msg = (
+                        f'Array of type {type(x[0])!s} does not support tiling. '
+                        'Repeat functionality will not be supported.'
+                    )
+                    raise ValueError(msg)
             elif isinstance(op, Combine):
                 # return [op.method(*xp.broadcast_arrays(*x))]
                 return [op.method(*x)]
