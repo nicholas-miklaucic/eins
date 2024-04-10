@@ -1,29 +1,24 @@
 # Ruff *really* does not like magic numbers!
+import pprint
 from collections import defaultdict
 from copy import deepcopy
 from itertools import chain
-import pprint
 from typing import Mapping, MutableSequence, Sequence, Union, cast
 
 from eins.combination import ArrayCombination
 from eins.common_types import Combination, Reduction
 from eins.constraint import Constraints, postprocess_ast
-from eins.parsing import Constant, Expr, Symbol, Node, make_expr, unpack_shorthands
+from eins.parsing import Constant, Expr, Node, Symbol, make_expr, unpack_shorthands
 from eins.reduction import ArrayReduction
 from eins.symbolic import (
-    Combine,
     Concat,
-    ExpandTo,
     OneHot,
-    Reduce,
     Reshape,
     ShapeOp,
     Split,
     Tensor,
-    Transpose,
     expr_parser,
 )
-
 
 EXP_ARITY = 2
 
@@ -163,6 +158,16 @@ class Program:
             self.reduce = defaultdict(lambda: reduce)
         else:
             self.reduce = dict(reduce)
+            # we may have already renamed axes, but the user is passing in the old names
+            # e.g., a b b, c b b -> a, reduce={'b': 'mean', 'c': 'sum'}
+            # b now is b-1 and b-2
+            for lhs, rhs in self.constr.equations:
+                if isinstance(rhs, Symbol) and isinstance(lhs, Symbol):
+                    if rhs.value in self.reduce:
+                        self.reduce[lhs.value] = self.reduce[rhs.value]
+                    elif lhs.value in self.reduce:
+                        self.reduce[rhs.value] = self.reduce[lhs.value]
+
         if not isinstance(reduce, Reduction):
             for k, v in reduce.items():
                 self.reduce[k] = v

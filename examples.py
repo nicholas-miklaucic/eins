@@ -3,7 +3,8 @@
 from typing import cast
 
 from eins import EinsOp
-from eins import Reductions as R, Transformations as T  # noqa: N817
+from eins import Reductions as R  # noqa: N817
+from eins import Transformations as T
 from eins.common_types import Array
 
 # Set this to 'jax', 'numpy', or 'torch'
@@ -78,6 +79,13 @@ patches = linear(images, kernel)
 affine = EinsOp('batch (I I) embed_dim, embed_dim -> batch (I I) embed_dim', combine='add')
 patches = affine(patches, bias)
 
+
+# Specify multiple reductions
+x = randn(4, 4, 5, 6)
+y1 = EinsOp('a a b c -> b', reduce={'a': 'mean', 'c': 'sum'})(x)
+y2 = xp.sum(xp.mean(xp.mean(x, axis=0), axis=0), axis=-1)
+test_close(y1, y2)
+
 # Expansion
 x = randn(8, 64, 3)
 
@@ -98,8 +106,6 @@ z1 = op(x, -y)
 z2 = EinsOp('b n1 d, b n2 d -> b n1 n2', combine='add', reduce=('sqrt', 'sum', 'square'))(x, -y)
 z3 = EinsOp('b n1 d, b n2 d -> b n1 n2', combine='add', reduce='hypot')(x, -y)
 z4 = EinsOp('b n1 d, b n2 d -> b n1 n2', combine='add', reduce=R.l2_norm)(x, -y)
-
-print(op)
 
 # Version without eins. Note how easy it would be to write x[:, None, ...] - y[:, :, None, ...],
 # which would lead to the transposed version of the pairwise distances you want.

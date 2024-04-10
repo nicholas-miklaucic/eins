@@ -30,7 +30,7 @@ class Constraints:
         if isinstance(node, Expr):
             for i, child in enumerate(node.children):
                 if isinstance(child, Expr) and child.op == '=':
-                    if len(child.children) != 2:  # noqa: PLR2004
+                    if len(child.children) != 2:
                         msg = 'Must have exactly two parts to equality'
                         raise ValueError(msg)
                     lhs, rhs = child.children
@@ -73,6 +73,8 @@ class Constraints:
             while node_value in curr_axes:
                 num += 1
                 # use - because it's not allowed in user identifiers
+                # if you ever change this, you need to change the logic in Program that adds
+                # the constraints!
                 node_value = f'{orig_value}-{num}'
 
             curr_axes.append(node_value)
