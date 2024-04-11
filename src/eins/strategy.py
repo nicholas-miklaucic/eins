@@ -111,7 +111,11 @@ class BaseStrategy:
             expanded = []
             for t in transposed:
                 expanded.extend(self.apply_op(ExpandTo(tuple(map(Symbol, start_axes))), t))
-            combined = self.apply_op(Combine(self.prog.combine), tuple(expanded))[0]
+
+            if len(expanded) > 1:
+                combined = self.apply_op(Combine(self.prog.combine), tuple(expanded))[0]
+            else:
+                combined = expanded[0]
 
             reduced = combined
 

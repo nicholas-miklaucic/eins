@@ -56,6 +56,18 @@ def test_close(a: Array, b: Array):
     assert diffs.max() < EPSILON, f'{a.shape} != {b.shape}, {R.mean(a)}, {R.mean(b)}, {diffs.max()}'  # noqa: S101
 
 
+# Splitting
+x, y = randn(3, 4), randn(5, 4)
+z2 = xp.concatenate((x, y), axis=0)
+
+x1 = EinsOp('a+b c -> a c', symbol_values={'a': x.shape[0]})(z2)
+test_close(x1, x)
+
+# Concatenation
+
+z1 = EinsOp('a c, b c -> a+b c')(x, y)
+test_close(z1, z2)
+
 # Simple matrix multiplication
 x = randn(32, 64)
 y = randn(64, 16)

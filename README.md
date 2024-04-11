@@ -65,6 +65,8 @@ in your project, feel free to
 - [x] Much more thorough documentation and tests for existing functionality
 - [x] Better visualization of the program graph
 - [ ] Work on everything needed to implement the lab.ml examples
+- [ ] Typo checking in errors about axes
+- [ ] Multiple outputs, either through arrows or commas
 
 ### Near-Term (weeks)
 

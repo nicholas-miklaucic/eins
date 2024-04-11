@@ -1,22 +1,9 @@
 """Type definitions"""
 
 from abc import ABCMeta, abstractmethod
-from typing import Callable, Optional, Protocol, Sequence, Tuple, Union
+from typing import Callable, Optional, Protocol, Sequence, Tuple, TypeVar, Union
 
-
-class Array(Protocol):
-    """Array functionality required for Eins to work."""
-
-    def __getitem__(
-        self,
-        key: Union[int, slice, Tuple[Union[int, slice], ...]],
-    ) -> 'Array': ...
-
-    @property
-    def shape(self) -> Sequence[int]: ...
-
-    @property
-    def ndim(self) -> int: ...
+Array = TypeVar('Array')
 
 
 class Reduction(metaclass=ABCMeta):

@@ -142,8 +142,11 @@ class Program:
             self.sources = [Tensor(lhs)]
 
         self.current = []
-        for source in self.sources:
-            self.current.extend(normalize_until_done(source))
+        self.source_curr_map = {}
+        for i, source in enumerate(self.sources):
+            currents = normalize_until_done(source)
+            self.current.extend(currents)
+            self.source_curr_map[i] = currents
 
         self.orig_sink = Tensor(rhs)
         self.sinks = list(normalize_until_done(self.orig_sink))
@@ -174,38 +177,51 @@ class Program:
 
     def make_path(self, strat):
         self.outputs = []
-        if len(self.sinks) > 1:
-            # multiple tensors in output this is the one time the rules are relaxed about using all
-            # inputs tensors that only have an axis in a different split aren't used e.g., a b, a c
-            # -> a b+c just does a b -> a b and a c -> a c
-            axes_sets = [set(sink.axes_list()) for sink in self.sinks]
+        # Normally, every input is used for every output. The exception is when there are splits in
+        # the input. For example, a b+c -> a b doesn't use a c. The rule is that a tensor with a
+        # split input is unused for an output only if it was split from a sum, of which at least one
+        # axis is in the output, but the specific split we're dealing with isn't.
 
-            all_splits = set()
-            diffs = []
-            for i, ax_set in enumerate(axes_sets):
-                others = set()
-                for j, ax_set2 in enumerate(axes_sets):
-                    if i == j:
-                        continue
-                    others |= ax_set2
-                diff = ax_set - others
-                diffs.append(diff)
-                all_splits |= diff
+        # a c, b c -> a+b c: all used
+        # a+b c -> a c: only a c used, not b c, because a in {a, c} but b not in {a c}
+        # a+b c, a+b d -> a c+d: a c used for a c, a d used for a d
 
-            per_sink_inputs = []
-            for diff in diffs:
-                per_sink_input = []
-                for curr in self.current:
-                    # TODO needs to be more robust for multiple splits? it can't be on the "wrong
-                    # side" of a single split a c, a d, b c, b d -> a+b c+d
-                    curr_ax = set(curr.axes_list())
-                    if curr_ax.isdisjoint(all_splits - diff):
-                        per_sink_input.append(curr)
-                per_sink_inputs.append(per_sink_input)
+        # TODO very challenging case: a+b c, a+b d, e a -> e c+d
 
-            # print(per_sink_inputs) print(self.sinks)
-            for sink_input, sink in zip(per_sink_inputs, self.sinks):
-                self.outputs.append(strat.connect(sink_input, sink))
+        # only necessary if we split at some point, so either multiple outputs or multiple inputs
+        # from a single source
+        if len(self.sinks) > 1 or len(self.current) != len(self.sources):
+            sink_axes = [set(sink.axes_list()) for sink in self.sinks]
+            common_sink_axes = set.intersection(*sink_axes)
+            split_sink_axes = [ax - common_sink_axes for ax in sink_axes]
+            missing_sink_axes = [common_sink_axes - ax for ax in sink_axes]
+
+            for sink_i, (axs, split, missing) in enumerate(
+                zip(sink_axes, split_sink_axes, missing_sink_axes)
+            ):
+                sink_inputs = []
+                for _source_i, currs in self.source_curr_map.items():
+                    curr_axes = [set(curr.axes_list()) for curr in currs]
+                    common_curr_axes = set.intersection(*curr_axes)
+                    split_curr_axes = [ax - common_curr_axes for ax in curr_axes]
+                    missing_curr_axes = [common_curr_axes - ax for ax in curr_axes]
+                    for curr, curr_axs, curr_split, curr_missing in zip(
+                        currs, curr_axes, split_curr_axes, missing_curr_axes
+                    ):
+                        # print(currs, curr_axes, curr_split, curr_missing, axs)
+                        if curr_split <= axs and curr_missing.isdisjoint(axs):
+                            sink_inputs.append(curr)
+                        elif curr_missing <= axs:
+                            continue
+                        else:
+                            msg = (
+                                f'Unclear split: {axs}, {split}, {missing} '
+                                f'{curr_axs}, {curr_split}, {curr_missing}'
+                            )
+                            raise ValueError(msg)
+
+                # print(sink_inputs, self.sinks[sink_i])
+                self.outputs.append(strat.connect(sink_inputs, self.sinks[sink_i]))
 
         else:
             self.outputs.append(strat.connect(self.current, self.sinks[0]))

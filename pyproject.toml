@@ -57,6 +57,8 @@ dependencies = [
   "jax",
   "jaxlib",
   "torch",
+  "flax",
+  "jaxtyping",
 ]
 [tool.hatch.envs.default.scripts]
 test = "pytest {args:tests}"
@@ -128,6 +130,8 @@ ignore = [
   "PLR0915",
   # 2 is not a magic number, this is ridiculous
   "PLR2004",
+  # Jaxtyping uses annotations ruff doesn't understand
+  "F722",
 ]
 unfixable = [
   # Don't touch unused imports

@@ -27,7 +27,7 @@ class ArrayBackend:
 
     def do(
         self, x: Sequence[Array], op: ShapeOp, ins: Sequence[Tensor], _outs: Sequence[Tensor]
-    ) -> Sequence[Array]:
+    ) -> Sequence['Array']:
         "Apply the op, which goes from i to o, on x, an actual array."
         if len(x) == 0:
             msg = 'Cannot call operation on empty inputs'
@@ -53,6 +53,7 @@ class ArrayBackend:
                     if val is None:
                         msg = f'Could not compute value of {child} for split operation.'
                         raise ValueError(msg)
+                    sizes.append(val)
 
                 out = []
                 curr = 0

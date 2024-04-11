@@ -267,11 +267,11 @@ class EinsOp:
             out.append('Execution Graph:\n')
             for op, sources, sinks in self.instructions:
                 source_str = ', '.join(
-                    [get_name(i) + '{' + str(self.abstract[i]) + '}' for i in sources]
+                    [get_name(i) + '{' + str(self.abstract.get(i, 'NA')) + '}' for i in sources]
                 )
 
                 sink_str = ', '.join(
-                    [get_name(i) + '{' + str(self.abstract[i]) + '}' for i in sinks]
+                    [get_name(i) + '{' + str(self.abstract.get(i, 'NA')) + '}' for i in sinks]
                 )
                 out.append(f'{op!s:>60}\t{source_str:>40} → {sink_str:<25}')
 
@@ -327,6 +327,8 @@ class EinsOp:
             self.concrete[id(src)] = arr
             self.abstract[id(src)] = src
 
+            # print(src, src.children)
+
             if len(src.children) == 0:
                 # we're done
                 return arr
@@ -344,6 +346,7 @@ class EinsOp:
                         res = fill_from(child, result)
                         if res is not None:
                             return res
+
                 else:
                     # no many-to-many ops: we can fill in all of these
                     child_results = self.backend.do([arr], op, [src], children)
@@ -366,11 +369,11 @@ class EinsOp:
         except ValueError as err:
             msg = f"""
 Error occurred during computation.
-Program:\n{self.program}
+{self}
 """
             raise ValueError(msg) from err
 
-        msg = f'Could not solve tensor graph: {self.program}'
+        msg = f'Could not solve tensor graph: \n{self}'
         raise ValueError(msg)
 
 
