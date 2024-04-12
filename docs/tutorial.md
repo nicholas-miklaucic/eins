@@ -1,33 +1,59 @@
 # Tutorial
 
-Essentially everything Eins can do happens through a single import:
+If you're new to Eins, you're in the right place!
+
+Virtually everything Eins can do happens through a single import:
 
 ```py
 from eins import EinsOp
 ```
 
-Let's see what it can do!
+Let's go through some common deep learning operations as implemented in Eins, learning about what
+differentiates Eins from other einsum libraries along the way.
 
-## Generalized Matrix Multiplication (Einstein Summation)
+## Introduction
 
-`EinsOp` represents the operation itself: you first create the operation you want, and then execute it with specific inputs.
+`EinsOp` represents a function on tensors without any concrete inputs. (It's like a module in
+PyTorch or JAX.)
+
+```py
+matmul = EinsOp('a b, b c -> a c')
+```
+
+When you construct this operation, Eins essentially compiles a high-level program. This has two
+benefits over having a single function that takes in the expression and the inputs:
+
+- The `EinsOp` is an object you can inspect, serialize, or manipulate however you like. This opens
+  the door for higher-level summaries of a program.
+- It's common to apply a single operation to many inputs of the same shape. Any work Eins does in
+  parsing and interpreting your expression won't have to be repeated if you define the operation
+  once.
+
+### Generalized Matrix Multiplication
+
+When you want to apply your operation, all you need to do is call it:
 
 ```py
 # returns x @ y
-EinsOp('a b, b c -> a c')(x, y)
+matmul = EinsOp('a b, b c -> a c')
+matmul(x, y)
 ```
 
-This takes in two matrices of size A × B and B × C and returns their product with shape A × C.
+### Batched 1x1 Convolution
 
-Eins shines in more complex situations. Let's see what a batched 1x1 convolution looks like:
+Eins shines when things get a little more interesting. Consider a batched 1x1 convolution that
+linearly maps channels in a BHWC image array to new channels.
 
 ```py
 # 1x1 convolution
-EinsOp('''batch height width chan_in, chan_in chan_out ->
-batch height width chan_out''')(images, kernel)
+EinsOp('''
+batch height width chan_in, chan_in chan_out ->
+batch height width chan_out
+''')(images, kernel)
 ```
 
-Adding informative names makes it much easier to catch errors and understand what's happening.
+Just like normal Python code, using descriptive identifiers helps the reader understand what's going
+on. Eins allows arbitrary whitespace between commas and `->`.
 
 ## Reshaping
 Let's say we have images in the BHWC format like above, and we want to stack the rows into a single axis. To notate a
@@ -40,52 +66,69 @@ EinsOp('''batch height width channels ->
           batch (height width) channels''')(ims)
 ```
 
+You can think of the parentheses as essentially flattening.
+
 ## Fancy Reshaping
 
-Here's something you won't find in other libraries: let's say we have a batch of square images that we've flattened
-using something like the above, and we want to reverse it. Just tell Eins that the two axes are the same size, and it'll
-figure out how to reshape it. You can either do that explicitly, by using `=`, or implicitly, by repeating an axis name
-within a single tensor.
+Here's something you won't find in other libraries: let's say we have a batch of square images that
+we've flattened using something like the above, and we want to reverse it. Just tell Eins that the
+two axes are the same size, and it'll figure out what to do. You can either do that explicitly, by
+using `=`, or implicitly, by repeating an axis name within a single tensor.
 
 ```py
 # unflatten batch of square images
 EinsOp('b (h w=h) c -> b h w c')(ims)
 EinsOp('b (h h) c -> b h h c')(ims)
 ```
-Eins defaults to matching up duplicate axes in the same order they appear. If you want to transpose after the
-unflatten, you need to use the explicit syntax.
+Eins defaults to matching up duplicate axes in the same order they appear. If you want to transpose
+after the unflatten, you need to use the explicit syntax.
 
-Eins implements a general system for inferring what you want from your inputs and constraints. This also lets Eins
-handle constant sizes properly.
+Eins also understands explicit constants:
 
 ```py
 # unflatten list of 3D points
-EinsOp('b (n 3) -> b n 3')(ims)
+EinsOp('b (n 3) -> b n 3')(pts)
 ```
+
+The constraint system Eins supports saves you keyboard strokes and saves your future self time
+debugging subtle logic errors.
 
 ## Specifying Shapes
 
-Sometimes, you will need to tell Eins a specific axis. (Often, you can resolve this by doing
-whatever you're going to do next and letting Eins infer using that shape.) There are two ways to do
-that: through the `symbol_values` argument, or by using `=` with constant values:
+Literal integer constants are succinct, but they lose some of the flexibility and readability of
+named axes. You can get the best of both worlds by passing in explicit axis mappings, using either
+the `symbol_values` argument or the `=` sign:
 
 ```py
 EinsOp('b (h w) c -> b h w c', symbol_values={'h': 4, 'w': 16})(ims)
-EinsOp('b (h=4 w) c -> b h w c')(ims)
-EinsOp('b (h w=16) c -> b h w c')(ims)
+EinsOp('b (h=4 w=16) c -> b h w c')(ims)
 ```
+
+You only need one of `h` and `w` specified, because Eins can deduce the other one, but sometimes
+it's nice to have an extra check that the input you give Eins is the shape you think it is.
 
 ## Concatenation
 
 An axis of shape `(h w)` has h × w values, and in fact Eins will let you write that as `h*w` if you prefer. Eins also
-supports `h+w`, which generalizes the notion of concatenation and stacking.
+supports `h+w`, which generalizes the notion of concatenation.
 
 ```py
 # concatenate inputs along second axis
 EinsOp('b n1, b n2 -> b n1+n2')(x, y)
 ```
 
-Just like multiplication, you can put sums anywhere in the inputs or outputs and Eins will deal with it correctly.
+## Splitting
+
+You can also have `+` signs in the input, which lets you slice and dice arrays in a readable way.
+[Singular value decomposition](https://www.wikiwand.com/en/Singular_value_decomposition) decomposes
+an M × N matrix into a product of three matrices: M × M, M × N, and N × N. Computing PCA requires
+selecting only the first R rows/columns, instead using M × R, R × R, and R × N.
+
+```py
+# Truncated SVD:
+rank = 5
+EinsOp(f'm=r1+u1 r1, r1 r2=r1, r2=n+u2 n', symbol_values={'rank': rank})
+```
 
 ## Strided Convolution/Patch Encoder
 

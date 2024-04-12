@@ -62,7 +62,7 @@ x = randn(5, 4)
 
 op = EinsOp('a b', transform={'b': ('softmax', ElementwiseOps.from_func(lambda x: x + 2))})
 y = op(x)
-print(op)
+# print(op)
 y2 = T.Softmax(temperature=1)(x, axis=1)
 test_close(y, y2)
 
@@ -148,3 +148,13 @@ y2 = EinsOp('b (h=4 w) c -> b h w c')(x)
 y3 = EinsOp('b (h w=16) c -> b h w c')(x)
 test_close(y1, y2)
 test_close(y2, y3)
+
+
+# Truncated SVD
+u = randn(8, 7)
+s = xp.diag(randn(7))
+v = randn(7, 6)
+
+rank = 5
+op = EinsOp('m=r1+u1 r1, r1 r2=r1, r2=n+u2 n -> m n', symbol_values={'rank': rank})
+op(u, s, v)

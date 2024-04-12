@@ -54,19 +54,8 @@ in your project, feel free to
 
 `eins` is still in heavy development. Here's a sense of where we're headed.
 
-### Short-Term (days)
-
-- [x] Better error reporting
-- [x] Implementing `repeat`
-- [x] Adding support for reductions that aren't in Array API (e.g., p-norm)
-- [x] Adding support for "transformations" that are elementwise but use an axis
-      (standardize)
-- [x] Flip order of inputs (logsumexp is log + sum + exp)
-- [x] Much more thorough documentation and tests for existing functionality
-- [x] Better visualization of the program graph
+### Short-Term
 - [ ] Work on everything needed to implement the lab.ml examples
-- [ ] Typo checking in errors about axes
-- [ ] Multiple outputs, either through arrows or commas
 
 ### Near-Term (weeks)
 
@@ -81,6 +70,8 @@ in your project, feel free to
 - [ ] Completing full support for tensor indexing
 - [ ] Warnings or errors for ambiguous expressions
 - [ ] Ways of visualizing and inspecting the computation graph
+- [ ] Typo checking in errors about axes
+- [ ] Multiple outputs, either through arrows or commas
 
 ### Long-Term (months)
 
