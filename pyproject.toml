@@ -132,6 +132,8 @@ ignore = [
   "PLR2004",
   # Jaxtyping uses annotations ruff doesn't understand
   "F722",
+  # named lambdas are fine
+  "E731",
 ]
 unfixable = [
   # Don't touch unused imports

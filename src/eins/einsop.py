@@ -229,7 +229,7 @@ class EinsOp:
 
         Parameters
         ----------
-        op: str
+        op: str or sequence of strs
             The description of the operation. For example, `'a b, b c -> a c'` performs matrix
             multiplication, and `'batch (size size) channels -> batch size size channels'` unpacks a
             batch of square images. Any amount of whitespace can surround `->` and `,`.

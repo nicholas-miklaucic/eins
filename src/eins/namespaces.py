@@ -1,6 +1,7 @@
 from eins.combination import CustomCombination
 from eins.combination import ops as _combination_ops
 from eins.common_types import CombinationFunc, ElementwiseFunc, ReductionFunc, TransformationFunc
+from eins.elementwise import Affine as _Affine
 from eins.elementwise import CustomElementwiseOp
 from eins.elementwise import ops as _elementwise_ops
 from eins.reduction import CustomReduction
@@ -40,6 +41,8 @@ class Combinations:
 
 class ElementwiseOps:
     """Namespace for built-in elementwise operations."""
+
+    Affine = _Affine
 
     abs = _elementwise_ops['abs']
     acos = _elementwise_ops['acos']

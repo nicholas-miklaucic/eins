@@ -88,6 +88,21 @@ class CustomElementwiseOp(ElementwiseOp):
         return self.func(arr)
 
 
+@dataclass(frozen=True, unsafe_hash=True)
+class Affine(ElementwiseOp):
+    """
+    Affine transformation.
+
+    Applies f(x) = x * scale + shift.
+    """
+
+    scale: float = 1.0
+    shift: float = 0.0
+
+    def __call__(self, arr: Array) -> Array:
+        return arr * self.scale + self.shift
+
+
 def parse_elementwise(name: str) -> Optional[ElementwiseOp]:
     arr_parse = ArrayElementwiseOp.parse(name)
     if arr_parse is not None:
