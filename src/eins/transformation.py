@@ -172,7 +172,7 @@ class Quantile(Transformation):
 
 
 @dataclass(frozen=True, unsafe_hash=True)
-class BackendDelegated(Transformation):
+class DelegatedTransformation(Transformation):
     """
     Operation that is delegated to different backend function calls.
 
@@ -240,7 +240,7 @@ def _generic_softmax(arr: Array, axis: int = 0) -> Array:
     return PowerNormalize(PowerNorm(1.0))(exp_shifted)
 
 
-_SoftmaxDelegate = BackendDelegated(
+_SoftmaxDelegate = DelegatedTransformation(
     generic=_generic_softmax, numpy=None, jax='nn.softmax', torch='nn.functional.softmax'
 )
 

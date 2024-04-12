@@ -1,8 +1,11 @@
 """Elementwise operations, for use in combination with reduction operations."""
 
+import math
 import typing
 from dataclasses import dataclass
-from typing import Literal, Optional
+from typing import Callable, Literal, Optional, Sequence, Union
+
+import array_api_compat
 
 from eins.common_types import Array, ElementwiseFunc, ElementwiseOp
 from eins.utils import array_backend
@@ -101,6 +104,68 @@ class Affine(ElementwiseOp):
 
     def __call__(self, arr: Array) -> Array:
         return arr * self.scale + self.shift
+
+
+@dataclass(frozen=True, unsafe_hash=True)
+class DelegatedElementwiseOp(ElementwiseOp):
+    """
+    Operation that is delegated to different backend function calls.
+
+    A generic Array-API-compatible version is also required, so this isn't for backend-specific
+    logic: that should be a custom callable. This is for, e.g., activation functions: there are
+    specific performance-optimized versions we'd like to use, but we can implement it ourselves if
+    we need to (e.g., in numpy).
+
+    Strings are members of a submodule of the overarching module for each array API, which helps
+    avoid requiring any of the individual backends.
+    """
+
+    generic: Callable
+    numpy: Union[Callable, str, None]
+    jax: Union[Callable, str, None]
+    torch: Union[Callable, str, None]
+
+    @staticmethod
+    def get_method(func_or_name: Union[Callable, str], module: str):
+        if isinstance(func_or_name, str):
+            if '.' in func_or_name:
+                # has submodule, import that
+                mod_name, func_name = func_or_name.rsplit('.', maxsplit=1)
+            else:
+                mod_name = ''
+                func_name = func_or_name
+            mod = __import__('.'.join((module, mod_name)), fromlist=[''])
+            return getattr(mod, func_name)
+        else:
+            return func_or_name
+
+    def __call__(self, arr: Array) -> Array:
+        if array_api_compat.is_torch_array(arr):
+            module = 'torch'
+        elif array_api_compat.is_jax_array(arr):
+            module = 'jax'
+        elif array_api_compat.is_numpy_array(arr):
+            module = 'numpy'
+        else:
+            return self.generic(arr, axis=axis)
+
+        func = getattr(self, module)
+        if func is None:
+            func = self.generic
+
+        try:
+            return self.get_method(func, module)(arr)
+        except TypeError:
+            # try using dim= instead of axis=
+            # works for torch
+            return self.get_method(func, module)(arr)
+
+
+class StandardDelegatedElementwiseOp(DelegatedElementwiseOp):
+    """
+    Delegated elementwise operation with standard backend implementations, without the need for
+    special documentation.
+    """
 
 
 def parse_elementwise(name: str) -> Optional[ElementwiseOp]:

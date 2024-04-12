@@ -96,7 +96,13 @@ class Constraints:
 
     def fill_in(self, values: Mapping[Symbol, int]):
         for k, v in values.items():
-            self.free_vars.remove(k.value)
+            if k.value in self.free_vars:
+                self.free_vars.remove(k.value)
+            else:
+                old_v = self.known_vars[k.value]
+                if old_v != v:
+                    msg = f'Conflicting values for {k.value}: {old_v} and {v}'
+                    raise ValueError(msg)
             self.known_vars[k.value] = v
 
     def value_of(self, node: Union[Node, str, int]) -> Optional[int]:
