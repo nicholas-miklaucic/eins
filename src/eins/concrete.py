@@ -17,6 +17,7 @@ from eins.symbolic import (
     Split,
     Tensor,
     Tile,
+    Transform,
     Transpose,
 )
 
@@ -36,7 +37,10 @@ class ArrayBackend:
         xp = array_namespace(*x)
 
         try:
-            if isinstance(op, Reshape):
+            if op.is_identity_for(ins):
+                # no-op
+                return x
+            elif isinstance(op, Reshape):
                 new_shape = tuple(map(self.constr.value_of, op.new_shape))
                 return [xp.reshape(x[0], shape=new_shape)]
             elif isinstance(op, Transpose):
@@ -111,6 +115,8 @@ class ArrayBackend:
                 return [op.method(*x)]
             elif isinstance(op, Reduce):
                 # print(ins, _outs, op, id(_outs[0]))
+                return [op.method(x[0], axis=ins[0].axes.index(op.axis))]
+            elif isinstance(op, Transform):
                 return [op.method(x[0], axis=ins[0].axes.index(op.axis))]
             else:
                 msg = 'Op not supported: ' + str(op)

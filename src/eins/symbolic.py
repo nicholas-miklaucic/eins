@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from typing import MutableSequence, Sequence, Union
 
 from eins.combination import Combination
+from eins.common_types import Transformation
 from eins.parsing import Constant, Expr, Node, Symbol
 from eins.reduction import Reduction
 
@@ -171,6 +172,18 @@ class Combine(ShapeOp):
 
     def is_identity_for(self, tensors: Sequence[Tensor]) -> bool:
         return len(tensors) == 1
+
+
+@dataclass(unsafe_hash=True)
+class Transform(ShapeOp):
+    method: Transformation
+    axis: Node
+
+    def apply(self, tensors: Sequence[Tensor]) -> Sequence[Tensor]:
+        return [tensors[0].deepcopy()]
+
+    def is_identity_for(self, tensors: Sequence[Tensor]) -> bool:
+        return self.axis not in tensors[0].axes
 
 
 @dataclass(unsafe_hash=True)

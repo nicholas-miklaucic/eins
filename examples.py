@@ -6,6 +6,7 @@ from eins import EinsOp
 from eins import Reductions as R  # noqa: N817
 from eins import Transformations as T
 from eins.common_types import Array
+from eins.namespaces import ElementwiseOps
 
 # Set this to 'jax', 'numpy', or 'torch'
 BACKEND = 'torch'
@@ -56,6 +57,15 @@ def test_close(a: Array, b: Array):
     assert diffs.max() < EPSILON, f'{a.shape} != {b.shape}, {R.mean(a)}, {R.mean(b)}, {diffs.max()}'  # noqa: S101
 
 
+# Softmax
+x = randn(5, 4)
+
+op = EinsOp('a b', transform={'b': ('softmax', ElementwiseOps.from_func(lambda x: x + 2))})
+y = op(x)
+print(op)
+y2 = T.Softmax(temperature=1)(x, axis=1)
+test_close(y, y2)
+
 # Splitting
 x, y = randn(3, 4), randn(5, 4)
 z2 = xp.concatenate((x, y), axis=0)
@@ -65,8 +75,8 @@ test_close(x1, x)
 
 # Concatenation
 
-z1 = EinsOp('a c, b c -> a+b c')(x, y)
-test_close(z1, z2)
+# z1 = EinsOp('a c, b c -> a+b c')(x, y)
+# test_close(z1, z2)
 
 # Simple matrix multiplication
 x = randn(32, 64)

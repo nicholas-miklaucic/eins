@@ -76,7 +76,7 @@ class ArrayElementwiseOp(ElementwiseOp):
         raise ValueError(msg) from None
 
 
-@dataclass
+@dataclass(frozen=True, unsafe_hash=True)
 class CustomElementwiseOp(ElementwiseOp):
     """Elementwise operation defined by user.
 

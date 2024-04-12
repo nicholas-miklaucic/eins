@@ -3,10 +3,10 @@ import pprint
 from collections import defaultdict
 from copy import deepcopy
 from itertools import chain
-from typing import Mapping, MutableSequence, Sequence, Union, cast
+from typing import Mapping, MutableSequence, Sequence, Tuple, Union, cast
 
 from eins.combination import ArrayCombination
-from eins.common_types import Combination, Reduction
+from eins.common_types import Combination, Reduction, Transformation
 from eins.constraint import Constraints, postprocess_ast
 from eins.parsing import Constant, Expr, Node, Symbol, make_expr, unpack_shorthands
 from eins.parsing import expr as expr_parser
@@ -18,6 +18,7 @@ from eins.symbolic import (
     ShapeOp,
     Split,
     Tensor,
+    Transform,
 )
 
 EXP_ARITY = 2
@@ -116,12 +117,10 @@ class Program:
         constr: Constraints,
         combine: Combination = DEFAULT_COMBINE,
         reduce: Union[Reduction, Mapping[str, Reduction]] = DEFAULT_REDUCE,
-        reduce_early: bool = True,  # noqa: FBT001, FBT002
     ):
-        self.reduce_early = reduce_early
         self.graph = {}
-        if expr.op != '->':
-            msg = f'Expected -> as operator, but got {expr.op}'
+        if expr.op != '->' and len(transform) == 0:
+            msg = 'Eins expressions must have -> unless they are a transformation.'
             raise ValueError(msg)
 
         if len(expr.op) != MAX_ARROW_OPERANDS:
@@ -226,6 +225,12 @@ class Program:
         else:
             self.outputs.append(strat.connect(self.current, self.sinks[0]))
 
+        self.link_outs_to_sink()
+
+    def link_outs_to_sink(self):
+        """
+        Connects the outputs (from the sources) to the sink.
+        """
         reverse_graph(self.orig_sink)
 
         for out, sink in zip(self.outputs, self.sinks):
@@ -277,3 +282,76 @@ class Program:
         strings.append('Equations:')
         strings.append(str(self.constr))
         return '\n'.join(strings)
+
+
+class TransformProgram(Program):
+    """
+    Program that applies transformations to the input tensor without modifying the shape.
+    """
+
+    def __init__(self, expr: Node, constr: Constraints, transform: Mapping[str, Transformation]):
+        if not isinstance(expr, Expr):
+            expr = Expr(' ', cast(MutableSequence[Node], [expr]))
+
+        if expr.op in (',', '->'):
+            msg = 'Eins transformations only take in a single input tensor.'
+            raise ValueError(msg)
+
+        self.constr = constr
+        self.graph = {}
+
+        self.sources = [Tensor(expr)]
+        self.current = list(normalize_until_done(self.sources[0]))
+
+        for t in self.current:
+            self.constr.add_variables(t.axes_list())
+
+        self.transform = transform
+
+        self.orig_sink = Tensor(expr)
+        self.sinks = list(normalize_until_done(self.orig_sink))
+
+        for lhs, rhs in self.constr.equations:
+            if isinstance(rhs, Symbol) and isinstance(lhs, Symbol):
+                if lhs.value in self.transform or rhs.value in self.transform:
+                    val = lhs.value if lhs.value in self.transform else rhs.value
+                    msg = (
+                        f"It's not clear which {val} axis you want to apply the transformation to."
+                        " Specify by giving the duplicates different names, e.g., 'a b=a' instead"
+                        " of 'a a'."
+                    )
+                    raise ValueError(msg)
+
+    def make_path(self, strat=None):  # noqa: ARG002
+        self.transform_map = {}
+        used_axes = set()
+
+        for i, curr in enumerate(self.current):
+            for ax in curr.axes_list():
+                if ax in self.transform:
+                    if ax in used_axes:
+                        msg = (
+                            f'Axis {ax} appears on both sides of a split axis. '
+                            'It is ambiguous whether transformation should happen'
+                            ' before or after the split.'
+                        )
+                        raise ValueError(msg)
+
+                    if curr in self.transform_map:
+                        msg = (
+                            f'Multiple transforms could be applied to tensor {curr}.'
+                            ' Split the operation into multiple to ensure consistent order.'
+                        )
+
+                    self.transform_map[i] = Transform(self.transform[ax], Symbol(ax))
+                    used_axes.add(ax)
+
+        self.outputs = []
+        for i, curr in enumerate(self.current):
+            if i in self.transform_map:
+                out = self.apply_op(self.transform_map[i], curr)[0]
+            else:
+                out = curr
+            self.outputs.append(out)
+
+        self.link_outs_to_sink()

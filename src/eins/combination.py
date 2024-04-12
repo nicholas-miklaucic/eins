@@ -87,7 +87,7 @@ class CompositeCombination(Combination):
         arrs = (arr1, arr2)
         out = arrs
         combines = 0
-        for op in self.ops:
+        for op in self.ops[::-1]:
             if isinstance(op, Combination):
                 combines += 1
                 if combines > 1:

@@ -10,17 +10,20 @@ import typing
 import warnings
 from dataclasses import dataclass
 from itertools import accumulate, chain
-from typing import Callable, Literal, Optional, Union, cast
+from typing import Callable, Literal, Optional, Sequence, Union, cast
 
 import array_api_compat
 
 from eins.combination import Combination, parse_combination
-from eins.common_types import Array, Transformation
+from eins.common_types import Array, ElementwiseOp, Transformation
 from eins.reduction import PowerNorm
 from eins.utils import array_backend
 
 # cumsum is the numpy version, so we support that name in addition to the Array API cumulative sum
 ArrayTransformationLiteral = Literal['sort', 'cumulative_sum', 'cumsum']
+
+
+ARRAY_TRANSFORM_OPS = [str(x) for x in typing.get_args(ArrayTransformationLiteral)]
 
 
 @dataclass(frozen=True, unsafe_hash=True)
@@ -234,12 +237,14 @@ def _generic_softmax(arr: Array, axis: int = 0) -> Array:
     amax = xp.expand_dims(xp.max(arr, axis=axis), axis=axis)
     exp_shifted = xp.exp(arr - amax)
 
-    return PowerNormalize.parse('l1_normalize')(exp_shifted)
+    return PowerNormalize(PowerNorm(1.0))(exp_shifted)
 
 
 _SoftmaxDelegate = BackendDelegated(
     generic=_generic_softmax, numpy=None, jax='nn.softmax', torch='nn.functional.softmax'
 )
+
+SoftmaxLiteral = Literal['softmax']
 
 
 @dataclass(frozen=True, unsafe_hash=True)
@@ -289,8 +294,25 @@ def parse_transformation(name: str) -> Optional[Transformation]:
     return None
 
 
+@dataclass(frozen=True, unsafe_hash=True)
+class CompositeTransformation(Transformation):
+    """
+    Applies multiple transformations in sequence.
+    """
+
+    transformations: Sequence[Union[ElementwiseOp, Transformation]]
+
+    def __call__(self, arr: Array, axis: int = 0) -> Array:
+        for t in self.transformations[::-1]:
+            if isinstance(t, ElementwiseOp):
+                arr = t(arr)
+            else:
+                arr = t(arr, axis=axis)
+        return arr
+
+
 TransformationLiteral = Union[
-    ArrayTransformationLiteral, ScanLiteral, NormalizeLiteral, QuantileLiteral
+    ArrayTransformationLiteral, ScanLiteral, NormalizeLiteral, QuantileLiteral, SoftmaxLiteral
 ]
 
 ops = {
