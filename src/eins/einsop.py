@@ -400,7 +400,9 @@ class EinsOp:
 
             if len(src.children) == 0:
                 # we're done
-                return arr
+                return [arr]
+
+            leaves = []
 
             for op, children in src.children:
                 if len(children) == 1:
@@ -413,8 +415,7 @@ class EinsOp:
                         instructions.append((op, list(map(id, child.parents)), [id(child)]))
                         # type: ignore
                         res = fill_from(child, result)
-                        if res is not None:
-                            return res
+                        leaves.extend(res)
 
                 else:
                     # no many-to-many ops: we can fill in all of these
@@ -422,19 +423,25 @@ class EinsOp:
                     instructions.append((op, [id(src)], list(map(id, children))))
                     for child, result in zip(children, child_results):
                         res = fill_from(child, result)
-                        if res is not None:
-                            return res
+                        leaves.extend(res)
 
-            return None
+            return leaves
 
         try:
+            leaves = []
             for src, arr in zip(self.program.sources, tensors):
                 ans = fill_from(src, arr)
-                if ans is not None:
-                    self.abstract[id(ans)] = self.program.orig_sink
-                    # the concrete arrays are large: we don't want to store them indefinitely
-                    self.concrete.clear()
-                    return ans
+                leaves.extend(ans)
+
+            self.out_shape = [
+                self.program.constr.value_of(ax) for ax in self.program.orig_sink.axes
+            ]
+            potential_returns = [l for l in leaves if list(l.shape) == self.out_shape]
+            ans = potential_returns[-1]
+            self.abstract[id(ans)] = self.program.orig_sink
+            # the concrete arrays are large: we don't want to store them indefinitely
+            self.concrete.clear()
+            return ans
         except ValueError as err:
             msg = f"""
 Error occurred during computation.

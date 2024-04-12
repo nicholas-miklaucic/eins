@@ -149,10 +149,12 @@ class Constraints:
         rhs_val = self.value_of(rhs)
         if lhs_val is not None and rhs_val is not None:
             if lhs_val != rhs_val:
+                eqns = '\n'.join(f'{lhs} = {rhs}' for lhs, rhs in self.equations)
                 msg = f"""Incompatible shapes given. The operation requires that {lhs} = {rhs}, but
 the deduced values of {lhs_val} and {rhs_val} are not equal.
 
 Deduced values: {self.known_vars}
+Equations:\n{eqns}
 """
                 raise ValueError(msg)
             return []

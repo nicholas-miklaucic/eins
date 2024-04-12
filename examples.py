@@ -53,6 +53,9 @@ EPSILON = 1e-3
 
 
 def test_close(a: Array, b: Array):
+    if a.shape != b.shape:
+        msg = f'{a.shape} != {b.shape}'
+        raise ValueError(msg)
     diffs = xp.mean(xp.abs(a - b))  # type: ignore
     assert diffs.max() < EPSILON, f'{a.shape} != {b.shape}, {R.mean(a)}, {R.mean(b)}, {diffs.max()}'  # noqa: S101
 
@@ -151,10 +154,15 @@ test_close(y2, y3)
 
 
 # Truncated SVD
-u = randn(8, 7)
-s = xp.diag(randn(7))
-v = randn(7, 6)
+u = randn(8, 8)
+s = randn(8)
+v = randn(7, 7)
 
 rank = 5
-op = EinsOp('m=r1+u1 r1, r1 r2=r1, r2=n+u2 n -> m n', symbol_values={'rank': rank})
-op(u, s, v)
+op = EinsOp('m r+_1, r+_2, r+_3 n -> m n', symbol_values={'r': rank})
+usv1 = op(u, s, v)
+usv2 = (u[:, :rank] * s[:rank]) @ v[:rank, :]
+# print(op)
+# print(usv1.shape)
+# print(usv2.shape)
+test_close(usv1, usv2)

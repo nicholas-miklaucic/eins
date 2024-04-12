@@ -119,7 +119,8 @@ class Program:
         reduce: Union[Reduction, Mapping[str, Reduction]] = DEFAULT_REDUCE,
     ):
         self.graph = {}
-        if expr.op != '->' and len(transform) == 0:
+        self.expr = expr
+        if expr.op != '->':
             msg = 'Eins expressions must have -> unless they are a transformation.'
             raise ValueError(msg)
 
@@ -199,25 +200,49 @@ class Program:
                 zip(sink_axes, split_sink_axes, missing_sink_axes)
             ):
                 sink_inputs = []
-                for _source_i, currs in self.source_curr_map.items():
+                for source_i, currs in self.source_curr_map.items():
                     curr_axes = [set(curr.axes_list()) for curr in currs]
-                    common_curr_axes = set.intersection(*curr_axes)
-                    split_curr_axes = [ax - common_curr_axes for ax in curr_axes]
+                    common_curr_axes = set.union(*curr_axes) - set.intersection(*curr_axes)
+                    split_curr_axes = [ax & common_curr_axes for ax in curr_axes]
                     missing_curr_axes = [common_curr_axes - ax for ax in curr_axes]
                     for curr, curr_axs, curr_split, curr_missing in zip(
                         currs, curr_axes, split_curr_axes, missing_curr_axes
                     ):
                         # print(currs, curr_axes, curr_split, curr_missing, axs)
+                        add_to_input = False
                         if curr_split <= axs and curr_missing.isdisjoint(axs):
-                            sink_inputs.append(curr)
-                        elif curr_missing <= axs:
-                            continue
+                            # split axes line up with output
+                            add_to_input = True
+                        elif curr_missing <= axs and curr_split.isdisjoint(axs):
+                            # other axes line up with output, skip
+                            add_to_input = False
                         else:
-                            msg = (
-                                f'Unclear split: {axs}, {split}, {missing} '
-                                f'{curr_axs}, {curr_split}, {curr_missing}'
-                            )
-                            raise ValueError(msg)
+                            # e.g., a+b, c a, d b, d e -> c e
+
+                            # Neither a nor b appear in output. Probably not solvable in general,
+                            # but we can at least try a basic heuristic: if the split axis appears
+                            # in another input, include it
+                            other_axes = []
+                            for source_j, other_currs in self.source_curr_map.items():
+                                if source_i != source_j:
+                                    other_axes.extend(
+                                        [set(curr.axes_list()) for curr in other_currs]
+                                    )
+                            other_axes = set.union(*other_axes)
+                            # print(other_axes)
+                            if curr_missing.isdisjoint(other_axes) and curr_split <= other_axes:
+                                add_to_input = True
+                            elif curr_missing <= other_axes and curr_split.isdisjoint(other_axes):
+                                add_to_input = False
+                            else:
+                                msg = (
+                                    f'Unclear split: {axs}, {split}, {missing} '
+                                    f'{curr_axs}, {curr_split}, {curr_missing}'
+                                )
+                                raise ValueError(msg)
+
+                        if add_to_input:
+                            sink_inputs.append(curr)
 
                 # print(sink_inputs, self.sinks[sink_i])
                 self.outputs.append(strat.connect(sink_inputs, self.sinks[sink_i]))
@@ -299,6 +324,7 @@ class TransformProgram(Program):
 
         self.constr = constr
         self.graph = {}
+        self.expr = expr
 
         self.sources = [Tensor(expr)]
         self.current = list(normalize_until_done(self.sources[0]))
