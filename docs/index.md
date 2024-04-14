@@ -1,26 +1,26 @@
 # Eins Documentation
-## Introduction: one tensor operation is all you need
+## Introduction: One Tensor Operation is All You Need
 
 What if most of your machine learning model code could be replaced by a single operation? Eins gives
 you a powerful language to describe array manipulation, making it a one-stop shop for all of your AI
 needs.
 
-For a sample of what Eins does, let's do [the patch embedding from a vision
+Let's say you want to compute batched pairwise distance between two batches of arrays of points:
+
+```python
+from eins import EinsOp
+EinsOp('batch n1 d, batch n2 d -> batch n1 n2',
+       combine='add', reduce='l2_norm')(pts1, -pts2)
+```
+
+If you're more interested in deep learning, here is [the patch embedding from a vision
 transformer](https://nn.labml.ai/transformers/vit/index.html#PatchEmbeddings). That means breaking
 up an image into patches and then linearly embedding each patch.
 
 ```python
 from eins import EinsOp
-patchify = EinsOp([
-    'b (n_p patch) (n_p patch) c',
-    '(patch patch c) emb',
-    'b (n_p n_p) emb'
-])
-
-kernel = randn(5 * 5 * 3, 12)
-images = randn(4, 55, 55, 3)
-patches = linear(images, kernel)
-print(patches.shape)  # (4, 121, 12)
+patchify = EinsOp('''b (n_p patch) (n_p patch) c, (patch patch c) emb -> b (n_p n_p) emb''')
+patches = patchify(images, kernel)
 ```
 
 ## Installation
