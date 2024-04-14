@@ -7,13 +7,14 @@ nav:
   - API Reference: $api/eins.***
 
 plugins:
-- search
-- exclude-search:
-    exclude:
-      - src/eins/*
-- mkapi
-- social
-- privacy
+  - search
+  - exclude-search:
+      exclude:
+        - src/eins/*
+  - mkapi
+  - social:
+      cards_layout: default
+  - privacy
 
 theme:
   name: material
