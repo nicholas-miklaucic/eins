@@ -17,7 +17,7 @@ keywords = [
   'neural networks',
   'scientific computing',
   'tensor manipulation',
-
+  'array manipulation',
 ]
 authors = [
   { name = "Nicholas Miklaucic", email = "nicholas.miklaucic@gmail.com" },
