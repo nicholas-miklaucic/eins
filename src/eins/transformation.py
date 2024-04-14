@@ -140,11 +140,11 @@ class PowerNormalize(Transformation):
             raise ValueError(msg)
 
 
-QuantileLiteral = Literal['quantile', 'min_max_normalize']
+MinMaxNormalizeLiteral = Literal['min_max_normalize']
 
 
 @dataclass(frozen=True, unsafe_hash=True)
-class Quantile(Transformation):
+class MinMaxNormalize(Transformation):
     """
     Transforms data so 0 is the minimum and 1 is the maximum. Can be thought of as min-max
     normalization.
@@ -154,7 +154,7 @@ class Quantile(Transformation):
 
     @classmethod
     def parse(cls, name: str):
-        if name in ('quantile', 'min-max-normalize'):
+        if name in ('min_max_normalize',):
             return cls()
         else:
             return None
@@ -286,7 +286,7 @@ class CustomTransformation(Transformation):
 
 
 def parse_transformation(name: str) -> Optional[Transformation]:
-    for cls in (ArrayTransformation, Scan, PowerNormalize, Quantile, Softmax):
+    for cls in (ArrayTransformation, Scan, PowerNormalize, MinMaxNormalize, Softmax):
         parse = cls.parse(name)
         if parse is not None:
             return parse
@@ -312,10 +312,15 @@ class CompositeTransformation(Transformation):
 
 
 TransformationLiteral = Union[
-    ArrayTransformationLiteral, ScanLiteral, NormalizeLiteral, QuantileLiteral, SoftmaxLiteral
+    ArrayTransformationLiteral,
+    ScanLiteral,
+    NormalizeLiteral,
+    MinMaxNormalizeLiteral,
+    SoftmaxLiteral,
 ]
 
 ops = {
     str(op): parse_transformation(op)
     for op in chain.from_iterable(map(typing.get_args, typing.get_args(TransformationLiteral)))
 }
+ops = {k: v for k, v in ops.items() if v is not None}

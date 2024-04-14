@@ -1,6 +1,8 @@
 # Advanced Eins
 
-If you're totally new to Eins or `einops` and want to see what the fuss is about, read the [tutorial](tutorial.md). If you just want examples of common operations in Eins, consult the [cookbook](tutorial.md). If you're interested in maximizing the power of Eins, you're in the right place!
+If you're totally new to Eins or `einops` and want to see what the fuss is about, read the
+[tutorial](tutorial.md). If you're interested in maximizing the power of Eins, you're in the right
+place!
 
 ```py
 from eins import EinsOp
@@ -51,7 +53,7 @@ Just like a folded combination becomes a reduction, a *scanned* or *accumulated*
 Note that the way NumPy and other libraries notate these differs from the idea of a scan. `cumprod`, in Eins, is really
 just an alias for `cummultiply`, because Eins uses the combination rather than the reduction. If you have an array with elements `[a, b, c, d]` and an operator like `*`, then Eins computes
 
-```
+```python
 [a, a * b, (a * b) * c, ((a * b) * c) * d]
 ```
 
@@ -66,7 +68,8 @@ Functions are applied right-to-left, matching existing nomenclature and function
 `'logaddexp'` weren't already a supported combination, you could replicate the functionality as `('log', 'add', 'exp')`.
 This computes the logarithm of the sum of the exponentials of the inputs.
 
-Similarly, if you wanted to compute root-mean-square error along an axis, you could use `reduce=('sqrt', 'mean', 'square')`. This is common enough to get its own name: `reduce='l2-norm'`. 
+Similarly, if you wanted to compute root-mean-square error along an axis, you could use
+`reduce=('sqrt', 'mean', 'square')`. This is common enough to get its own name: `'l2_norm'`.
 
 ### Explicit Function Objects
 
@@ -76,22 +79,18 @@ harder to know what functions Eins defines or use your own.
 
 If you prefer, you can instead pass in explicit objects: `Combination`, `Reduction`, `ElementwiseOp`, and
 `Transformation`. These are each base classes that you can implement yourself, but it's easiest to use the associated
-object exported from the base namespace: `Combinations`, `Reductions`, etc. These namespaces provide an autocomplete-friendly way of using these operations. 
+object exported from the base namespace: `Combinations`, `Reductions`, etc. These namespaces provide an autocomplete-friendly way of using these operations.
 
 Explicit objects are the only way to specify compositions with function syntax. If you pass in a callable to `combine`
 or `reduce`, Eins will assume it has the correct signature, but if you pass in `(my_func1, my_func2)` Eins has no way of
 knowing what's what. Instead, you can do:
 
-```py
+```py title="Batched Kurtosis"
 from eins import EinsOp, Reductions as R, ElementwiseOps as E
 from scipy.stats import kurtosis
 # kurtosis has signature (x, axis=0, ...)
 
-# Batched absolute value kurtosis: measures non-normality
-EinsOp(
-  'batch sample_size -> batch'
-  reduce = (E.abs, R.from_func(kurtosis))
-)
+EinsOp('batch sample_size -> batch', reduce=(E.abs, R.from_func(kurtosis)))
 ```
 
 ## Standalone Operator Usage
@@ -99,8 +98,7 @@ EinsOp(
 For backend-agnostic code or simply as a wrapper for functionality Eins implements that isn't available in all libraries, there's no reason you can't just use the above functions outside of an EinsOp context:
 
 ```python
-from eins import Reductions as R
-from eins import Transformations as T
+from eins import Reductions as R, Transformations as T
 
 # 1.5-norm: somewhere between Manhattan and Euclidean distance
 # akin to torch.nn.functional.normalize, but no direct numpy equivalent

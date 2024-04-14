@@ -56,7 +56,7 @@ class ArrayCombination(Combination):
         if xp is not None and hasattr(xp, self.func_name):
             func = getattr(xp, self.func_name)
         elif hasattr(arr, self.func_name):
-            func = lambda x, y: getattr(x, self.func_name)(y)  # noqa: E731
+            func = lambda x, y: getattr(x, self.func_name)(y)
         else:
             msg = f'Name {self.func_name} not a valid function for array of type {type(arr)}'
             raise ValueError(msg) from None
@@ -111,3 +111,4 @@ def parse_combination(name: str) -> Optional[Combination]:
 
 
 ops = {str(op): parse_combination(op) for op in typing.get_args(CombineLiteral)}
+ops = {k: v for k, v in ops.items() if v is not None}

@@ -230,20 +230,24 @@ class EinsOp:
         Parameters
         ----------
         op: str or sequence of strs
-            The description of the operation. For example, `'a b, b c -> a c'` performs matrix
-            multiplication, and `'batch (size size) channels -> batch size size channels'` unpacks a
-            batch of square images. Any amount of whitespace can surround `->` and `,`.
+            The description of the operation.
 
-        reduce: function f(Array, axis: int) → Array, Reduction, str, sequence of elementwise ops,
-        transformations, and reductions, or mapping from axes to previous
+            If a list of strings is passed in, the last string is assumed to be the output, and the
+            others are assumed to be inputs.
+
+            For example, `'a b, b c -> a c'` performs matrix multiplication. There is a lot of
+            supported syntax: consult the tutorial for more information.
+
+        reduce: function, Reduction, str, sequence of ops, or mapping from axes to previous
             Describes how axes that appear in the input but not the output are eliminated: use
-            [eins.Reductions] to get an autocomplete-friendly list of options. The default is
-            `'sum'`, like in `einsum`. Common alternatives are `'mean'`, `'std'`, `'max'`, and
-            `'min'`. This can also be a combine operation, which is reduced in the functional
-            programming sense. For example, `'add'` would perform the same reduction as `'sum'` but
-            in a less efficient loop. You can also pass in a function: it should be callable as
-            `func(arr, axis=0)` and return an array with that axis eliminated. `eins` makes no
-            guarantees about the order reductions are performed.
+            [eins.Reductions] to get an autocomplete-friendly list of options.
+
+            The default is `'sum'`, like in `einsum`. Common alternatives are `'mean'`, `'std'`,
+            `'max'`, and `'min'`. This can also be a combine operation, which is reduced in the
+            functional programming sense. For example, `'add'` would perform the same reduction as
+            `'sum'` but in a less efficient loop. You can also pass in a function: it should be
+            callable as `func(arr, axis=0)` and return an array with that axis eliminated. `eins`
+            makes no guarantees about the order reductions are performed.
 
             For even more flexibility, this can be any of the previous inputs "sandwiched" by
             elementwise operations. For example, `('log', 'sum', 'exp')` would be equivalent to
@@ -257,20 +261,19 @@ class EinsOp:
             'c': 'min'}` has two meanings, depending on which happens first. Instead, you can pass
             `'a b c -> a b -> a'`, which forces a specific order.
 
-        combine: function f(Array, Array) → Array, Combination, str, sequence of elementwise ops and
-        a combination, or mapping from axes to previous
+        combine: function, Combination, str, sequence of ops, or mapping from axes to previous
             Describes how the elements of different input tensors are combined: use
-            [eins.Combinations] to get an autocomplete-friendly list of options. The default is
-            `'multiply'`, which is what `einsum` does. This can be a list of elementwise operations
-            and a single combination operation, like reduce: `('log', 'add', 'exp')` would be a less
-            efficient equivalent operation to `'logaddexp'`.
+            [eins.Combinations] to get an autocomplete-friendly list of options.
+
+            The default is `'multiply'`, which is what `einsum` does. This can be a list of
+            elementwise operations and a single combination operation, like reduce: `('log', 'add',
+            'exp')` would be a less efficient equivalent operation to `'logaddexp'`.
 
             A custom callable should be callable as `func(arr1, arr2)` and return an array of the
             same shape as the two inputs. `eins` makes no guarantees about the order combinations
             are performed, so this function should be commutative and associative.
 
-        transform: mapping from axes to one of: function f(Array, axis: int) → Array,
-        Transformation, str, or sequence of elementwise ops and transforms
+        transform: mapping from axes to: function, Transformation, str, or sequence of previous
 
         symbol_values: mapping from symbols to integers or None
             An alternative to using = to specify axis values.
@@ -287,7 +290,16 @@ class EinsOp:
 
         self.is_transform = len(transform) > 0
 
-        self.op_str = op
+        if isinstance(op, str):
+            self.op_str = op
+        elif len(op) == 0:
+            msg = 'EinsOp must have at least one operation.'
+            raise ValueError(msg)
+        elif len(op) == 1:
+            self.op_str = op[0]
+        else:
+            *inputs, output = op[-1]
+            self.op_str = ', '.join(inputs) + ' -> ' + output
 
         if self.is_transform:
             self.transform = {k: _parse_transform_arg(v) for k, v in transform.items()}
@@ -437,11 +449,12 @@ class EinsOp:
                 self.program.constr.value_of(ax) for ax in self.program.orig_sink.axes
             ]
             potential_returns = [l for l in leaves if list(l.shape) == self.out_shape]
-            ans = potential_returns[-1]
-            self.abstract[id(ans)] = self.program.orig_sink
-            # the concrete arrays are large: we don't want to store them indefinitely
-            self.concrete.clear()
-            return ans
+            if potential_returns:
+                ans = potential_returns[-1]
+                self.abstract[id(ans)] = self.program.orig_sink
+                # the concrete arrays are large: we don't want to store them indefinitely
+                self.concrete.clear()
+                return ans
         except ValueError as err:
             msg = f"""
 Error occurred during computation.
@@ -457,6 +470,8 @@ def einsop(
     *tensors_and_pattern: Union[Array, str],
     reduce: ReduceArg = 'sum',
     combine: CombineArg = 'multiply',
+    transform: Optional[Mapping[str, TransformArg]] = None,
+    **kwargs,
 ) -> Array:
     """
     A functional version of [EinsOp] that does not allow for inspection or caching.
@@ -492,5 +507,5 @@ Two strings passed in: {pattern} and {t}. Perhaps you mean reduce= or combine=?"
         else:
             tensors.append(t)
 
-    op = EinsOp(pattern, reduce=reduce, combine=combine)
+    op = EinsOp(pattern, reduce=reduce, combine=combine, transform=transform, symbol_values=kwargs)
     return op(*tensors)

@@ -179,6 +179,7 @@ def parse_elementwise(name: str) -> Optional[ElementwiseOp]:
 ElementwiseLiteral = ArrayElementwiseLiteral
 
 ops = {str(op): parse_elementwise(op) for op in typing.get_args(ElementwiseLiteral)}
+ops = {k: v for k, v in ops.items() if v is not None}
 
 
 # others to add: logit expit/sigmoid activation functions

@@ -8,23 +8,46 @@ nav:
 
 plugins:
 - search
+- exclude-search:
+    exclude:
+      - src/eins/*
 - mkapi
+- social
+- privacy
 
 theme:
   name: material
-  font:
-    code: Source Code Pro
-    text: Source Sans Pro
+  palette:
+    - scheme: default
+      primary: pink
+      accent: red
+      toggle:
+        icon: fontawesome/solid/moon
+        name: Switch to dark mode
+    - scheme: slate
+      primary: pink
+      accent: red
+      toggle:
+        icon: fontawesome/solid/sun
+        name: Switch to light mode
+  font: false
   features:
     - content.tooltips
     - content.code.copy
+    - navigation.top
     - navigation.expand
     - navigation.indexes
     - navigation.sections
     - navigation.tabs
     - navigation.path
+    - search.suggest
+    - search.highlight
+    - search.share
+    - toc.integrate
+
   icon:
     - code: fontawesome/brands/github
+
 
 repo_url: https://github.com/nicholas-miklaucic/eins
 markdown_extensions:
@@ -61,3 +84,11 @@ markdown_extensions:
       custom_checkbox: true
   - pymdownx.tilde
 
+extra_javascript:
+  - javascripts/katex.js
+  - https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.7/katex.min.js
+  - https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.7/contrib/auto-render.min.js
+
+extra_css:
+  - https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.7/katex.min.css
+  - stylesheets/extra.css

@@ -240,3 +240,4 @@ ops = {
     str(op): parse_reduction(op)
     for op in chain.from_iterable(map(typing.get_args, typing.get_args(ReductionLiteral)))
 }
+ops = {k: v for k, v in ops.items() if v is not None}

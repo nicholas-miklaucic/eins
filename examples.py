@@ -9,7 +9,7 @@ from eins.common_types import Array
 from eins.namespaces import ElementwiseOps
 
 # Set this to 'jax', 'numpy', or 'torch'
-BACKEND = 'torch'
+BACKEND = 'jax'
 
 if BACKEND == 'jax':
     import jax.numpy as jnp
@@ -73,7 +73,7 @@ test_close(y, y2)
 x, y = randn(3, 4), randn(5, 4)
 z2 = xp.concatenate((x, y), axis=0)
 
-x1 = EinsOp('a+b c -> a c', symbol_values={'a': x.shape[0]})(z2)
+x1 = EinsOp('α+β γ -> α γ', symbol_values={'α': x.shape[0]})(z2)
 test_close(x1, x)
 
 # Concatenation
