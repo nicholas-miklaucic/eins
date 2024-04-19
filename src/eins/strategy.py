@@ -3,10 +3,9 @@
 from collections import defaultdict
 from typing import Sequence, Union
 
-from eins.common_types import Transformation
-from eins.parsing import Constant, Symbol
+from eins.parsing import Symbol
 from eins.program import Program
-from eins.symbolic import Combine, ExpandTo, Reduce, ShapeOp, Tensor, Tile, Transform, Transpose
+from eins.symbolic import Combine, ExpandTo, Reduce, ShapeOp, Tensor, Tile, Transpose
 
 
 class BaseStrategy:

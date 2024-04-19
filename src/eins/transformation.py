@@ -99,8 +99,18 @@ class Scan(Transformation):
     def __call__(self, arr: Array, axis: int = 0) -> Array:
         xp = array_backend(arr)
         if xp is not None:
-            slices = xp.unstack(arr, axis=axis)
-            return cast(Array, accumulate(slices, self.combination))
+            # the array API *should* have unstack, but that's not in every version.
+            # So we implement it a worse way.
+            if hasattr(xp, 'unstack'):
+                stacks = xp.unstack(arr, axis=axis)  # type: ignore
+            else:
+                slc: list[Union[slice, int]] = [slice(None)] * arr.ndim
+                stacks = []
+                for i in range(arr.shape[axis]):
+                    slc[axis] = i
+                    stacks.append(arr[tuple(slc)])
+                    slc[axis] = slice(None)
+            return cast(Array, accumulate(stacks, self.combination))
         else:
             msg = f'Cannot scan over non-Array {arr} of type {type(arr)}'
             raise ValueError(msg)

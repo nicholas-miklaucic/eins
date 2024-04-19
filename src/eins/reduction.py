@@ -9,7 +9,14 @@ from math import isnan
 from typing import Literal, Optional, Sequence, Union
 
 from eins.combination import Combination, parse_combination
-from eins.common_types import Array, ElementwiseOp, Reduction, ReductionFunc, Transformation
+from eins.common_types import (
+    Array,
+    ElementwiseOp,
+    Reduction,
+    ReductionFunc,
+    Transformation,
+    call_axis_func,
+)
 from eins.utils import array_backend
 
 # https://data-apis.org/array-api/latest/API_specification/statistical_functions.html
@@ -222,7 +229,7 @@ class CustomReduction(Reduction):
     func: ReductionFunc
 
     def __call__(self, arr: Array, axis: int = 0) -> Array:
-        return self.func(arr, axis=axis)
+        return call_axis_func(self.func, arr, axis=axis)
 
 
 def parse_reduction(name: str) -> Optional[Reduction]:

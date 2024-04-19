@@ -3,7 +3,7 @@
 import typing
 from itertools import chain
 from string import ascii_uppercase
-from typing import AnyStr, Callable, Mapping, MutableMapping, Optional, Sequence, Union
+from typing import AnyStr, Callable, List, Mapping, MutableMapping, Optional, Sequence, Union, cast
 
 from eins.combination import (
     Combination,
@@ -129,7 +129,9 @@ def _parse_transform_arg(transform: TransformArg) -> Transformation:
         if combo_parse is not None:
             return combo_parse
 
-        msg = f'Cannot parse transformation {transform}. Valid literals: {", ".join(_transformation_ops)}'
+        msg = f'Cannot parse transformation {transform}. Valid literals: ' + ', '.join(
+            _transformation_ops
+        )
         raise ValueError(msg)
     else:
         ops = []
@@ -214,7 +216,7 @@ class EinsOp:
 
     def __init__(
         self,
-        op: str,
+        op: Union[str, Sequence[str]],
         /,
         *,
         reduce: ReduceArg = 'sum',
@@ -423,7 +425,9 @@ class EinsOp:
                     concrete_parents = [self.concrete.get(id(parent)) for parent in child.parents]
                     if all(p is not None for p in concrete_parents):
                         # we can fill in this operation
-                        result = self.backend.do(concrete_parents, op, child.parents, [child])[0]
+                        result = self.backend.do(
+                            cast(List[Array], concrete_parents), op, child.parents, [child]
+                        )[0]
                         instructions.append((op, list(map(id, child.parents)), [id(child)]))
                         # type: ignore
                         res = fill_from(child, result)
@@ -448,7 +452,7 @@ class EinsOp:
             self.out_shape = [
                 self.program.constr.value_of(ax) for ax in self.program.orig_sink.axes
             ]
-            potential_returns = [l for l in leaves if list(l.shape) == self.out_shape]
+            potential_returns = [leaf for leaf in leaves if list(leaf.shape) == self.out_shape]
             if potential_returns:
                 ans = potential_returns[-1]
                 self.abstract[id(ans)] = self.program.orig_sink

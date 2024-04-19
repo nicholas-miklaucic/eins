@@ -4,8 +4,8 @@ from typing import cast
 
 from eins import EinsOp
 from eins import Reductions as R  # noqa: N817
-from eins import Transformations as T
-from eins.common_types import Array
+from eins import Transformations as T  # noqa: N817
+from eins.common_types import Array, ArrayBackend
 from eins.namespaces import ElementwiseOps
 
 # Set this to 'jax', 'numpy', or 'torch'
@@ -14,17 +14,17 @@ BACKEND = 'jax'
 if BACKEND == 'jax':
     import jax.numpy as jnp
 
-    xp = jnp
+    xp: ArrayBackend[jnp.array] = jnp
     arr = jnp.array
 elif BACKEND == 'numpy':
     import numpy as np
 
-    xp = np
+    xp: ArrayBackend[np.ndarray] = np
     arr = np.array
 elif BACKEND == 'torch':
     import torch
 
-    xp = torch
+    xp: ArrayBackend[torch.Tensor] = torch
     arr = torch.tensor
 else:
     raise ValueError
@@ -36,7 +36,7 @@ def randn(*shape) -> Array:
         import numpy as np
 
         # TODO debug why bfloat16 doesn't work here
-        return jnp.asarray(np.random.randn(*shape))
+        return jnp.asarray(np.random.randn(*shape), dtype=jnp.bfloat16)
     elif BACKEND == 'numpy':
         import numpy as np
 
@@ -73,7 +73,7 @@ test_close(y, y2)
 x, y = randn(3, 4), randn(5, 4)
 z2 = xp.concatenate((x, y), axis=0)
 
-x1 = EinsOp('α+β γ -> α γ', symbol_values={'α': x.shape[0]})(z2)
+x1 = EinsOp('λ+β Δ -> λ Δ', symbol_values={'λ': x.shape[0]})(z2)
 test_close(x1, x)
 
 # Concatenation

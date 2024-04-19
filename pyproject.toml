@@ -39,7 +39,7 @@ classifiers = [
   "Topic :: Software Development :: Libraries :: Python Modules",
   "Typing :: Typed",
 ]
-dependencies = ["array-api-compat", "pyparsing"]
+dependencies = ["array-api-compat", "pyparsing", "typing-extensions"]
 
 [project.urls]
 Documentation = "https://github.com/nicholas-miklaucic/eins#readme"

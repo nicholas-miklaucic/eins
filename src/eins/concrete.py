@@ -90,6 +90,10 @@ class ArrayBackend:
 
                 for out_ax, in_len in zip(op.new_shape, x[0].shape):
                     out_len = self.constr.value_of(out_ax)
+                    if out_len is None:
+                        msg = f'Could not compute value of {out_ax} for tile operation.'
+                        raise ValueError(msg)
+
                     if out_len % in_len != 0:
                         msg = f'Cannot tile: {in_len} does not divide {out_len}'
                         msg += f': {x[0]}, {op.new_shape}'

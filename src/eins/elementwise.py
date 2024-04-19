@@ -1,9 +1,8 @@
 """Elementwise operations, for use in combination with reduction operations."""
 
-import math
 import typing
 from dataclasses import dataclass
-from typing import Callable, Literal, Optional, Sequence, Union
+from typing import Callable, Literal, Optional, Union
 
 import array_api_compat
 
@@ -120,7 +119,7 @@ class DelegatedElementwiseOp(ElementwiseOp):
     avoid requiring any of the individual backends.
     """
 
-    generic: Callable
+    generic: ElementwiseFunc
     numpy: Union[Callable, str, None]
     jax: Union[Callable, str, None]
     torch: Union[Callable, str, None]
@@ -147,7 +146,7 @@ class DelegatedElementwiseOp(ElementwiseOp):
         elif array_api_compat.is_numpy_array(arr):
             module = 'numpy'
         else:
-            return self.generic(arr, axis=axis)
+            return self.generic(arr)
 
         func = getattr(self, module)
         if func is None:
