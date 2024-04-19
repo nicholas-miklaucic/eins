@@ -57,7 +57,16 @@ def test_close(a: Array, b: Array):
         msg = f'{a.shape} != {b.shape}'
         raise ValueError(msg)
     diffs = xp.mean(xp.abs(a - b))  # type: ignore
-    assert diffs.max() < EPSILON, f'{a.shape} != {b.shape}, {R.mean(a)}, {R.mean(b)}, {diffs.max()}'  # noqa: S101
+    assert (  # noqa: S101
+        diffs.max() < EPSILON
+    ), f'{a.shape} != {b.shape}, {R.mean(a.reshape(-1))}, {R.mean(b.reshape(-1))}, {diffs.max()}'
+
+
+# Unit axis
+x = randn(5)
+
+op = EinsOp('a -> ()', reduce='sum')
+test_close(op(x), xp.sum(x))
 
 
 # Softmax

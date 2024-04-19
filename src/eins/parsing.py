@@ -15,7 +15,7 @@ pows_atomic = re.compile(r'([^{} +*/-]+)\^(\d+)')
 def unpack_parens(m: re.Match):
     body = m.group()[1:-1]
     exprs = body.split(' ')
-    return lparen + '*'.join(f'{lparen}{expr}{rparen}' for expr in exprs) + rparen
+    return lparen + '*'.join(f'{lparen}{expr}{rparen}' for expr in exprs if expr) + rparen
 
 
 def unpack_index(m: re.Match):
@@ -46,7 +46,6 @@ def unpack_shorthands(expr: str):
         new_expr, expr = re.sub(parens, unpack_parens, new_expr), new_expr
 
     expr = re.sub(index, unpack_index, new_expr)
-
     return expr
 
 
@@ -67,6 +66,7 @@ mul_op = pp.one_of('* /')
 pow_op = pp.one_of('^')
 arrow = spaces + pp.Literal('->') + spaces
 index_op = spaces + pp.one_of('@') + spaces
+unit = pp.Literal('()')
 
 symbol = pp.Word(
     pp.pyparsing_unicode.identchars,
@@ -75,7 +75,7 @@ symbol = pp.Word(
 )
 literal = pp.Word(pp.nums)
 
-operand = symbol | literal
+operand = symbol | literal | unit
 
 expr = pp.infix_notation(
     operand,
@@ -136,6 +136,8 @@ def make_expr(parsed: Union[list, str]) -> Node:
     if isinstance(parsed, str):
         if parsed.isdigit():
             return Constant(int(parsed))
+        elif parsed == '()':
+            return Expr(' ', [])
         else:
             return Symbol(parsed)
     else:
