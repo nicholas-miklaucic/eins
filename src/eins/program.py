@@ -3,7 +3,7 @@ import pprint
 from collections import defaultdict
 from copy import deepcopy
 from itertools import chain
-from typing import Mapping, MutableSequence, Sequence, Tuple, Union, cast
+from typing import Mapping, MutableSequence, Sequence, Union, cast
 
 from eins.combination import ArrayCombination
 from eins.common_types import Combination, Reduction, Transformation
@@ -158,7 +158,7 @@ class Program:
         self.combine = combine
 
         if isinstance(reduce, Reduction):
-            self.reduce = defaultdict(lambda: reduce)
+            self.reduce: Mapping[str, Reduction] = defaultdict(lambda: reduce)
         else:
             self.reduce = dict(reduce)
             # we may have already renamed axes, but the user is passing in the old names

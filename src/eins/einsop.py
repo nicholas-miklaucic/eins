@@ -5,6 +5,8 @@ from itertools import chain
 from string import ascii_uppercase
 from typing import AnyStr, Callable, List, Mapping, MutableMapping, Optional, Sequence, Union, cast
 
+from typing_extensions import TypeVar
+
 from eins.combination import (
     Combination,
     CombineLiteral,
@@ -164,6 +166,9 @@ these operations or explicitly create objects using e.g., eins.ElementwiseOps.fr
             raise ValueError(msg)
 
         return CompositeTransformation(tuple(ops))
+
+
+Arr = TypeVar('Arr', bound=Array)
 
 
 def _parse_combine_arg(combine: CombineArg) -> Combination:
@@ -362,12 +367,16 @@ class EinsOp:
         out.append(str(self.program.constr))
         return '\n'.join(out)
 
-    def __call__(self, *tensors: Array) -> Array:
+    def __call__(self, tensor1: Arr, /, *tensors: Array) -> Arr:
         """
         Apply the operation to the given tensors, returning the output tensor.
 
         Parameters
         ----------
+        tensor1: any Array object
+            The first tensor to apply the operation to. Not treated differently from the others: this
+            is separated from the others because calling with zero tensors is disallowed, and so type
+            inference can work.
         tensors: any number of Array objects
             The tensors to apply the operation to. Should be all the same type: numpy, torch, jax,
             cupy, and dask are all supported. The order matches the order of the input arguments.
@@ -381,6 +390,7 @@ class EinsOp:
         ValueError:
             if the wrong number of tensors is passed in.
         """
+        tensors = (tensor1, *tensors)
         if len(tensors) != len(self.program.sources):
             msg = f'Expected {len(self.program.sources)} tensors, got {len(tensors)}'
             raise ValueError(msg)
@@ -468,48 +478,3 @@ Error occurred during computation.
 
         msg = f'Could not solve tensor graph: \n{self}'
         raise ValueError(msg)
-
-
-def einsop(
-    *tensors_and_pattern: Union[Array, str],
-    reduce: ReduceArg = 'sum',
-    combine: CombineArg = 'multiply',
-    transform: Optional[Mapping[str, TransformArg]] = None,
-    **kwargs,
-) -> Array:
-    """
-    A functional version of [EinsOp] that does not allow for inspection or caching.
-
-    This exists mainly as a bridge between that interface and the familiar one used by einops. Use
-    [EinsOp] instead, unless you really want a roughly compatible einops-like function.
-
-    Parameters
-    ----------
-    tensors_and_pattern:
-        The tensors to apply the operation to, followed by the op string. Should be all the same
-        type, and support the Array API.
-    reduce:
-        The reduction operation to apply to the outputs of the operation. Defaults to `'sum'`.
-    combine:
-        The combination operation to apply to the outputs of the operation. Defaults to
-        `'multiply'`.
-
-    Returns
-    -------
-    The result of the EinsOp.
-    """
-    tensors = []
-    pattern = ''
-    for t in tensors_and_pattern:
-        if isinstance(t, str):
-            if pattern:
-                msg = f"""
-Two strings passed in: {pattern} and {t}. Perhaps you mean reduce= or combine=?"""
-                raise ValueError(msg)
-            else:
-                pattern = t
-        else:
-            tensors.append(t)
-
-    op = EinsOp(pattern, reduce=reduce, combine=combine, transform=transform, symbol_values=kwargs)
-    return op(*tensors)

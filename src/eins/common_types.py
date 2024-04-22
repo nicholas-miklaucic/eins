@@ -70,11 +70,43 @@ class ArrayBackend(Protocol[Arr]):
     def log(self, __arr: Arr) -> Arr: ...
 
 
+class Combination(metaclass=ABCMeta):
+    """
+    Operation to combine array values together. Commutative, associative function of signature
+    f(Array, Array) → Array.
+    """
+
+    @classmethod
+    def parse(cls, _name: str) -> Optional['Combination']:
+        """
+        Attempts to construct an instance of the operation from the string name. If unsuccessful,
+        returns None. Used for shorthand syntax, like passing in 'sqrt' instead of the named Sqrt
+        op.
+        """
+        return None
+
+    @abstractmethod
+    def __call__(self, arr1: Array, arr2: Array) -> Array:
+        """Applies the function to the two inputs, returning a single output."""
+        raise NotImplementedError
+
+
 class Reduction(metaclass=ABCMeta):
     """
     A function with signature f(Array, axis: int) → Array that removes the axis. Common examples:
     sum, product, mean, norm.
     """
+
+    def fold_of(self) -> Optional[Combination]:
+        """
+        If this reduction can be thought of mathematically as a fold—for instance, sum can be
+        thought of as a folded add, and logsumexp can be thought of as a folded logaddexp, returns
+        that operation. If not (e.g., median), then returns None.
+
+        Used for determining how Eins can order operations when compiling expressions.
+        """
+        # None won't ever lead to problems: it's safe, if slow
+        return None
 
     @classmethod
     def parse(cls, _name: str) -> Optional['Reduction']:
@@ -119,6 +151,11 @@ class ElementwiseOp(metaclass=ABCMeta):
     Array.
     """
 
+    def commutes_with(self, op: Combination) -> bool:  # noqa: ARG002
+        """Returns whether op(f(x), f(y)) == f(op(x, y))."""
+        # by default, assume it doesn't: this is safe.
+        return False
+
     @classmethod
     def parse(cls, _name: str) -> Optional['ElementwiseOp']:
         """
@@ -131,27 +168,6 @@ class ElementwiseOp(metaclass=ABCMeta):
     @abstractmethod
     def __call__(self, arr: Array) -> Array:
         """Applies the function elementwise."""
-        raise NotImplementedError
-
-
-class Combination(metaclass=ABCMeta):
-    """
-    Operation to combine array values together. Commutative, associative function of signature
-    f(Array, Array) → Array.
-    """
-
-    @classmethod
-    def parse(cls, _name: str) -> Optional['Combination']:
-        """
-        Attempts to construct an instance of the operation from the string name. If unsuccessful,
-        returns None. Used for shorthand syntax, like passing in 'sqrt' instead of the named Sqrt
-        op.
-        """
-        return None
-
-    @abstractmethod
-    def __call__(self, arr1: Array, arr2: Array) -> Array:
-        """Applies the function to the two inputs, returning a single output."""
         raise NotImplementedError
 
 
