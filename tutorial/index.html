@@ -1,0 +1,1047 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="..">
+      
+      
+        <link rel="next" href="../in-depth/">
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.5.18">
+    
+    
+      
+        <title>Tutorial - Eins</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.66ac8b77.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+    
+    
+      <link rel="stylesheet" href="../mkapi-common.css">
+    
+      <link rel="stylesheet" href="../mkapi-material.css">
+    
+      <link rel="stylesheet" href="../assets/external/cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.7/katex.min.css">
+    
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+      
+        <meta  property="og:type"  content="website" >
+      
+        <meta  property="og:title"  content="Tutorial - Eins" >
+      
+        <meta  property="og:description"  content="None" >
+      
+        <meta  property="og:image"  content="./assets/images/social/tutorial.png" >
+      
+        <meta  property="og:image:type"  content="image/png" >
+      
+        <meta  property="og:image:width"  content="1200" >
+      
+        <meta  property="og:image:height"  content="630" >
+      
+        <meta  property="og:url"  content="None" >
+      
+        <meta  name="twitter:card"  content="summary_large_image" >
+      
+        <meta  name="twitter:title"  content="Tutorial - Eins" >
+      
+        <meta  name="twitter:description"  content="None" >
+      
+        <meta  name="twitter:image"  content="./assets/images/social/tutorial.png" >
+      
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="pink" data-md-color-accent="red">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#tutorial" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Eins" class="md-header__button md-logo" aria-label="Eins" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Eins
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Tutorial
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="pink" data-md-color-accent="red"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.5.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M223.5 32C100 32 0 132.3 0 256s100 224 223.5 224c60.6 0 115.5-24.2 155.8-63.4 5-4.9 6.3-12.5 3.1-18.7s-10.1-9.7-17-8.5c-9.8 1.7-19.8 2.6-30.1 2.6-96.9 0-175.5-78.8-175.5-176 0-65.8 36-123.1 89.3-153.3 6.1-3.5 9.2-10.5 7.7-17.3s-7.3-11.9-14.3-12.5c-6.3-.5-12.6-.8-19-.8z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="pink" data-md-color-accent="red"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.5.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M361.5 1.2c5 2.1 8.6 6.6 9.6 11.9L391 121l107.9 19.8c5.3 1 9.8 4.6 11.9 9.6s1.5 10.7-1.6 15.2L446.9 256l62.3 90.3c3.1 4.5 3.7 10.2 1.6 15.2s-6.6 8.6-11.9 9.6L391 391l-19.9 107.9c-1 5.3-4.6 9.8-9.6 11.9s-10.7 1.5-15.2-1.6L256 446.9l-90.3 62.3c-4.5 3.1-10.2 3.7-15.2 1.6s-8.6-6.6-9.6-11.9L121 391 13.1 371.1c-5.3-1-9.8-4.6-11.9-9.6s-1.5-10.7 1.6-15.2L65.1 256 2.8 165.7c-3.1-4.5-3.7-10.2-1.6-15.2s6.6-8.6 11.9-9.6L121 121l19.9-107.9c1-5.3 4.6-9.8 9.6-11.9s10.7-1.5 15.2 1.6L256 65.1l90.3-62.3c4.5-3.1 10.2-3.7 15.2-1.6zM160 256a96 96 0 1 1 192 0 96 96 0 1 1-192 0zm224 0a128 128 0 1 0-256 0 128 128 0 1 0 256 0z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var media,input,key,value,palette=__md_get("__palette");if(palette&&palette.color){"(prefers-color-scheme)"===palette.color.media&&(media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']"),palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent"));for([key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+          <a href="javascript:void(0)" class="md-search__icon md-icon" title="Share" aria-label="Share" data-clipboard data-clipboard-text="" data-md-component="search-share" tabindex="-1">
+            
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7 0-.24-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.15c-.05.21-.08.43-.08.66 0 1.61 1.31 2.91 2.92 2.91 1.61 0 2.92-1.3 2.92-2.91A2.92 2.92 0 0 0 18 16.08Z"/></svg>
+          </a>
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/nicholas-miklaucic/eins" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.5.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+    
+  
+  
+    <li class="md-tabs__item md-tabs__item--active">
+      <a href="./" class="md-tabs__link">
+        
+  
+    
+  
+  Tutorial
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../in-depth/" class="md-tabs__link">
+        
+  
+    
+  
+  Advanced Eins
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        
+  
+    
+  
+  API Reference
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--lifted md-nav--integrated" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Eins" class="md-nav__button md-logo" aria-label="Eins" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    Eins
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/nicholas-miklaucic/eins" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.5.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Home
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Tutorial
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Tutorial
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#introduction" class="md-nav__link">
+    <span class="md-ellipsis">
+      Introduction
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Introduction">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#generalized-matrix-multiplication" class="md-nav__link">
+    <span class="md-ellipsis">
+      Generalized Matrix Multiplication
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#batched-1x1-convolution" class="md-nav__link">
+    <span class="md-ellipsis">
+      Batched 1x1 Convolution
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reshaping" class="md-nav__link">
+    <span class="md-ellipsis">
+      Reshaping
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fancy-reshaping" class="md-nav__link">
+    <span class="md-ellipsis">
+      Fancy Reshaping
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Fancy Reshaping">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#strided-convolutionpatch-encoder" class="md-nav__link">
+    <span class="md-ellipsis">
+      Strided Convolution/Patch Encoder
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#specifying-shapes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Specifying Shapes
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#advanced-shape-manipulation-with-sum-axes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Advanced Shape Manipulation with Sum Axes
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Advanced Shape Manipulation with Sum Axes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#concatenation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Concatenation
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#splitting" class="md-nav__link">
+    <span class="md-ellipsis">
+      Splitting
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#beyond-einsum" class="md-nav__link">
+    <span class="md-ellipsis">
+      Beyond Einsum
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Beyond Einsum">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#adding-a-bias-term" class="md-nav__link">
+    <span class="md-ellipsis">
+      Adding a Bias Term
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pairwise-distance" class="md-nav__link">
+    <span class="md-ellipsis">
+      Pairwise Distance
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#batched-mean-huber-loss" class="md-nav__link">
+    <span class="md-ellipsis">
+      Batched Mean Huber Loss
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#composable-nonlinear-math" class="md-nav__link">
+    <span class="md-ellipsis">
+      Composable Nonlinear Math
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Composable Nonlinear Math">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#approximate-numerical-equality" class="md-nav__link">
+    <span class="md-ellipsis">
+      Approximate Numerical Equality
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#softmax-with-labeled-axes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Softmax with Labeled Axes
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#typed-functions" class="md-nav__link">
+    <span class="md-ellipsis">
+      Typed Functions
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#next-steps" class="md-nav__link">
+    <span class="md-ellipsis">
+      Next Steps
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../in-depth/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Advanced Eins
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    API Reference
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+  
+  
+
+
+<h1 id="tutorial">Tutorial<a class="headerlink" href="#tutorial" title="Permanent link">&para;</a></h1>
+<p>If you're new to Eins, you're in the right place!</p>
+<p>Virtually everything Eins can do happens through a single import:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">eins</span> <span class="kn">import</span> <span class="n">EinsOp</span>
+</code></pre></div>
+<p>Let's go through some common deep learning operations as implemented in Eins, learning about what
+differentiates Eins from other einsum libraries along the way.</p>
+<h2 id="introduction">Introduction<a class="headerlink" href="#introduction" title="Permanent link">&para;</a></h2>
+<p><code class="highlight"><span class="n">EinsOp</span></code> represents a function on tensors without any concrete inputs. (It's like a module in
+PyTorch or JAX.)</p>
+<div class="highlight"><pre><span></span><code><span class="n">matmul</span> <span class="o">=</span> <span class="n">EinsOp</span><span class="p">(</span><span class="s1">&#39;a b, b c -&gt; a c&#39;</span><span class="p">)</span>
+</code></pre></div>
+<p>When you construct this operation, Eins essentially compiles a high-level program. This has two
+benefits over having a single function that takes in the expression and the inputs:</p>
+<ul>
+<li>The <code class="highlight"><span class="n">EinsOp</span></code> is an object you can inspect, serialize, or manipulate however you like. This opens
+  the door for higher-level summaries of a program.</li>
+<li>It's common to apply a single operation to many inputs of the same shape. Any work Eins does in
+  parsing and interpreting your expression won't have to be repeated if you define the operation
+  once.</li>
+</ul>
+<h3 id="generalized-matrix-multiplication">Generalized Matrix Multiplication<a class="headerlink" href="#generalized-matrix-multiplication" title="Permanent link">&para;</a></h3>
+<p>When you want to apply your operation, all you need to do is call it:</p>
+<div class="highlight"><span class="filename">Matrix multiplication</span><pre><span></span><code><span class="c1"># returns x @ y</span>
+<span class="n">matmul</span> <span class="o">=</span> <span class="n">EinsOp</span><span class="p">(</span><span class="s1">&#39;a b, b c -&gt; a c&#39;</span><span class="p">)</span>
+<span class="n">matmul</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+</code></pre></div>
+<p>Eins should support any implementation of the <a href="https://data-apis.org/array-api/latest/index.html">Array
+API</a>, but it specifically promises support for
+NumPy, PyTorch, and JAX. One of the best things about using Eins is that it frees you from having to
+remember the subtle differences in nomenclature and behavior between libraries.</p>
+<h3 id="batched-1x1-convolution">Batched 1x1 Convolution<a class="headerlink" href="#batched-1x1-convolution" title="Permanent link">&para;</a></h3>
+<p>Eins shines when things get a little more interesting. Consider a batched 1x1 convolution that
+linearly maps channels in a BHWC image array to new channels.</p>
+<div class="highlight"><span class="filename">1×1 Convolution</span><pre><span></span><code><span class="n">EinsOp</span><span class="p">(</span><span class="s1">&#39;&#39;&#39;</span>
+<span class="s1">batch height width chan_in, chan_in chan_out -&gt;</span>
+<span class="s1">batch height width chan_out</span>
+<span class="s1">&#39;&#39;&#39;</span><span class="p">)(</span><span class="n">images</span><span class="p">,</span> <span class="n">kernel</span><span class="p">)</span>
+</code></pre></div>
+<p>Just like normal Python code, using descriptive identifiers helps the reader understand what's going
+on. Eins allows arbitrary whitespace between commas and <code class="highlight"><span class="o">-&gt;</span></code>.</p>
+<h2 id="reshaping">Reshaping<a class="headerlink" href="#reshaping" title="Permanent link">&para;</a></h2>
+<p>Let's say we have images in the BHWC format like above, and we want to stack the rows into a single axis. To notate a
+flattened axis, we use <code class="highlight"><span class="p">(</span><span class="n">height</span> <span class="n">width</span><span class="p">)</span></code>:</p>
+<div class="highlight"><span class="filename">Flatten inner axes</span><pre><span></span><code><span class="c1"># equivalent to ims.reshape(batch, height * width, channels)</span>
+<span class="n">EinsOp</span><span class="p">(</span><span class="s1">&#39;&#39;&#39;batch height width channels -&gt;</span>
+<span class="s1">          batch (height width) channels&#39;&#39;&#39;</span><span class="p">)(</span><span class="n">ims</span><span class="p">)</span>
+</code></pre></div>
+<p>You can think of the parentheses as essentially flattening.</p>
+<h2 id="fancy-reshaping">Fancy Reshaping<a class="headerlink" href="#fancy-reshaping" title="Permanent link">&para;</a></h2>
+<p>Here's something you won't find in other libraries: let's say we have a batch of square images that
+we've flattened using something like the above, and we want to reverse it. Just tell Eins that the
+two axes are the same size, and it'll figure out what to do. You can either do that explicitly, by
+using <code class="highlight"><span class="o">=</span></code>, or implicitly, by repeating an axis name within a single tensor.</p>
+<p><div class="highlight"><span class="filename">Unflatten batch of square images</span><pre><span></span><code><span class="n">EinsOp</span><span class="p">(</span><span class="s1">&#39;b (h w=h) c -&gt; b h w c&#39;</span><span class="p">)(</span><span class="n">ims</span><span class="p">)</span>
+<span class="n">EinsOp</span><span class="p">(</span><span class="s1">&#39;b (h h) c -&gt; b h h c&#39;</span><span class="p">)(</span><span class="n">ims</span><span class="p">)</span>
+</code></pre></div>
+Eins defaults to matching up duplicate axes in the same order they appear. If you want to transpose
+after the unflatten, you need to use the explicit syntax.</p>
+<p>Eins also understands explicit constants:</p>
+<div class="highlight"><span class="filename">Unflattening 3D points</span><pre><span></span><code><span class="n">EinsOp</span><span class="p">(</span><span class="s1">&#39;b (n 3) -&gt; b n 3&#39;</span><span class="p">)(</span><span class="n">pts</span><span class="p">)</span>
+</code></pre></div>
+<h3 id="strided-convolutionpatch-encoder">Strided Convolution/Patch Encoder<a class="headerlink" href="#strided-convolutionpatch-encoder" title="Permanent link">&para;</a></h3>
+<p>The patch encoder in a vision transformer is a specific kind of strided convolution, breaking the
+image into p × p squares and then linearly embedding each of them. Despite the complexity, Eins can
+figure everything out without any explicit shape information:</p>
+<div class="highlight"><span class="filename">Patch encoder (ViT)</span><pre><span></span><code><span class="n">EinsOp</span><span class="p">(</span><span class="s1">&#39;&#39;&#39;batch (num_patch p) (num_patch p) chan_in,</span>
+<span class="s1">(p p chan_in) chan_out -&gt;</span>
+<span class="s1">batch (num_patch num_patch) chan_out&#39;&#39;&#39;</span><span class="p">)(</span><span class="n">images</span><span class="p">,</span> <span class="n">kernel</span><span class="p">)</span>
+</code></pre></div>
+<p>Eins knows <code class="highlight"><span class="n">chan_in</span></code> from <code class="highlight"><span class="n">images</span></code>, can use that plus the knowledge that the patches are square to
+deduce <code class="highlight"><span class="n">p</span></code>, and then can figure out <code class="highlight"><span class="n">num_patch</span></code> from there.</p>
+<p>The constraint system Eins supports saves your fingers from having to type out redundant information
+and saves your brain time debugging subtle logic errors.</p>
+<h2 id="specifying-shapes">Specifying Shapes<a class="headerlink" href="#specifying-shapes" title="Permanent link">&para;</a></h2>
+<p>Despite these efforts to figure out what you want, sometimes there are multiple potential values for
+a symbol, and Eins needs your help to figure out which one to do. Literal integer constants are
+succinct, but they lose some of the flexibility and readability of named axes. You can get the best
+of both worlds by passing in explicit axis mappings, using either the <code class="highlight"><span class="n">symbol_values</span></code> argument or
+the <code class="highlight"><span class="o">=</span></code> sign:</p>
+<div class="highlight"><span class="filename">Unflatten non-square axes</span><pre><span></span><code><span class="n">EinsOp</span><span class="p">(</span><span class="s1">&#39;b (h w) c -&gt; b h w c&#39;</span><span class="p">,</span> <span class="n">symbol_values</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;h&#39;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">:</span> <span class="mi">16</span><span class="p">})(</span><span class="n">ims</span><span class="p">)</span>
+<span class="n">EinsOp</span><span class="p">(</span><span class="s1">&#39;b (h=4 w=16) c -&gt; b h w c&#39;</span><span class="p">)(</span><span class="n">ims</span><span class="p">)</span>
+</code></pre></div>
+<p>You only need one of <code class="highlight"><span class="n">h</span></code> and <code class="highlight"><span class="n">w</span></code> specified, because Eins can deduce the other one, but sometimes
+it's nice to have an extra check that the input you give Eins is the shape you think it is.</p>
+<h2 id="advanced-shape-manipulation-with-sum-axes">Advanced Shape Manipulation with Sum Axes<a class="headerlink" href="#advanced-shape-manipulation-with-sum-axes" title="Permanent link">&para;</a></h2>
+<p>An axis of shape <code class="highlight"><span class="p">(</span><span class="n">h</span> <span class="n">w</span><span class="p">)</span></code> has h × w values, and in fact Eins will let you write that as <code class="highlight"><span class="n">h</span><span class="o">*</span><span class="n">w</span></code> if you prefer. Eins also
+supports <code class="highlight"><span class="n">h</span><span class="o">+</span><span class="n">w</span></code>, which generalizes the notion of concatenation.</p>
+<h3 id="concatenation">Concatenation<a class="headerlink" href="#concatenation" title="Permanent link">&para;</a></h3>
+<div class="highlight"><span class="filename">Concatenate inputs along second axis</span><pre><span></span><code><span class="n">EinsOp</span><span class="p">(</span><span class="s1">&#39;b n1, b n2 -&gt; b n1+n2&#39;</span><span class="p">)(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+</code></pre></div>
+<h3 id="splitting">Splitting<a class="headerlink" href="#splitting" title="Permanent link">&para;</a></h3>
+<p>You can also have <code class="highlight"><span class="o">+</span></code> signs in the input, which lets you slice and dice arrays in a readable way:</p>
+<div class="highlight"><span class="filename">Split along axis</span><pre><span></span><code><span class="n">EinsOp</span><span class="p">(</span><span class="s1">&#39;5+a b -&gt; a b&#39;</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+</code></pre></div>
+<details class="example">
+<summary>Advanced Example: PCA</summary>
+<p>PCA, more specifically <a href="https://www.wikiwand.com/en/Singular_value_decomposition">Singular value decomposition</a> is
+one real-world example of when you might need this. Let's say you have three arrays U, S, V of
+shapes M × R, R, and R × N, which is what <code class="highlight"><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">svd</span></code> would return. You want to approximate the
+combined product, of shape M × N, by taking only the first 5 values along the R axis:</p>
+<div class="highlight"><span class="filename">Truncated SVD</span><pre><span></span><code><span class="n">u</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">v</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">svd</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">7</span><span class="p">))</span>
+<span class="n">truncated_rank</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="n">op</span> <span class="o">=</span> <span class="n">EinsOp</span><span class="p">(</span><span class="s1">&#39;m t+_1, t+_2, t+_3 n -&gt; m n&#39;</span><span class="p">,</span> <span class="n">symbol_values</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;t&#39;</span><span class="p">:</span> <span class="n">truncated_rank</span><span class="p">})</span>
+<span class="n">op</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
+</code></pre></div>
+<p>Because <code class="highlight"><span class="n">t</span></code> is shared across the different inputs, Eins uses that part of the split to make the output. When in doubt
+about how to interpret something, there's no harm in breaking it up, but this showcases the deduction ability Eins has.</p>
+</details>
+<h2 id="beyond-einsum">Beyond Einsum<a class="headerlink" href="#beyond-einsum" title="Permanent link">&para;</a></h2>
+<p>Deep learning would not be a very exciting field if the only things you did were matrix
+multiplication and rearranging elements in memory. Luckily, Eins supports a lot more, and moreover
+it does so without long docs pages of different single-purpose functions to learn.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This tutorial won't cover everything about this part of Eins: consult <a href="../in-depth/">Advanced Eins</a>
+if you want a more in-depth tour of this area of the library's functionality.</p>
+</div>
+<p>To understand how Eins represents computation, let's think about how matrix multiplication works. A
+matrix multiplication of two matrices M and N with shapes A × B and B × C can be broken down as
+such:</p>
+<div class="arithmatex">\[
+(MN)_{ac} = \sum_{b=1}^{B} (M_{ab} \cdot N_{bc})
+\]</div>
+<p>We first combine M and N together by a broadcasted elementwise multiplication, lining up the two
+matrices along the B axis. Then, we eliminate the B axis by summing over all of its values. If you
+prefer Python, here's code expressing this idea:</p>
+<div class="highlight"><span class="filename">Matrix multiplication as broadcasted product and sum over axis</span><pre><span></span><code><span class="c1"># reshape AB to a x b x 1 and reshape BC to 1 x b x c</span>
+<span class="c1"># then they broadcast to a x b x c</span>
+<span class="n">ABC</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="n">AB</span><span class="p">[:,</span> <span class="p">:,</span> <span class="kc">None</span><span class="p">],</span> <span class="n">BC</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:])</span>
+<span class="c1"># sum over B axis</span>
+<span class="n">AC</span> <span class="o">=</span> <span class="n">ABC</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="c1"># AC is equivalent to AB @ BC</span>
+</code></pre></div>
+<p>We can generalize matrix multiplication by replacing <code class="highlight"><span class="o">.</span><span class="n">multiply</span></code> and <code class="highlight"><span class="o">.</span><span class="n">sum</span></code> with other functions that have
+the same signature. Using NumPy as an example, if you go through their API you'll find a couple
+functions that can be subsituted for the ones above:</p>
+<table>
+<thead>
+<tr>
+<th>Default</th>
+<th>Alternatives</th>
+<th>Signature</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code class="highlight"><span class="n">np</span><span class="o">.</span><span class="n">multiply</span></code></td>
+<td><code class="highlight"><span class="n">np</span><span class="o">.</span><span class="n">add</span></code>, <code class="highlight"><span class="n">np</span><span class="o">.</span><span class="n">minimum</span></code>, <code class="highlight"><span class="n">np</span><span class="o">.</span><span class="n">maximum</span></code></td>
+<td><code class="highlight"><span class="n">f</span><span class="p">(</span><span class="n">Array</span><span class="p">,</span> <span class="n">Array</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span></code>, with all array shapes equal</td>
+</tr>
+<tr>
+<td><code class="highlight"><span class="n">np</span><span class="o">.</span><span class="n">sum</span></code></td>
+<td><code class="highlight"><span class="n">np</span><span class="o">.</span><span class="n">prod</span></code>, <code class="highlight"><span class="n">np</span><span class="o">.</span><span class="n">min</span></code>, <code class="highlight"><span class="n">np</span><span class="o">.</span><span class="n">max</span></code></td>
+<td><code class="highlight"><span class="n">f</span><span class="p">(</span><span class="n">Array</span><span class="p">,</span> <span class="n">axis</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span></code>, removing the axis</td>
+</tr>
+</tbody>
+</table>
+<p>Eins calls the first kind of function a <strong>combination</strong> and the second kind a <strong>reduction</strong>. The
+defaults are <code class="highlight"><span class="n">combine</span><span class="o">=</span><span class="s1">&#39;multiply&#39;</span></code> and <code class="highlight"><span class="n">reduce</span><span class="o">=</span><span class="s1">&#39;sum&#39;</span></code>, which is why we haven't needed them for matrix
+multiplication.</p>
+<h3 id="adding-a-bias-term">Adding a Bias Term<a class="headerlink" href="#adding-a-bias-term" title="Permanent link">&para;</a></h3>
+<p>Let's say we just applied a linear layer to get outputs of shape <code class="highlight"><span class="n">batch</span> <span class="n">dim</span></code>. We can apply a
+broadcasted sum with a bias parameter of shape <code class="highlight"><span class="n">dim</span></code> by supplying the <code class="highlight"><span class="n">combine</span></code> argument:</p>
+<div class="highlight"><span class="filename">Bias Term</span><pre><span></span><code><span class="n">EinsOp</span><span class="p">(</span><span class="s1">&#39;batch dim, dim -&gt; batch dim&#39;</span><span class="p">,</span> <span class="n">combine</span><span class="o">=</span><span class="s1">&#39;add&#39;</span><span class="p">)(</span><span class="n">linear</span><span class="p">,</span> <span class="n">bias</span><span class="p">)</span>
+</code></pre></div>
+<p>This would happen automatically by broadcasting, but when broadcasting doesn't work it's often quite
+error-prone to manually line up shapes.</p>
+<h3 id="pairwise-distance">Pairwise Distance<a class="headerlink" href="#pairwise-distance" title="Permanent link">&para;</a></h3>
+<p>Let's say we have batches of <code class="highlight"><span class="n">d</span></code>-dimensional points and we want to compute the pairwise distance between points in the same batch:</p>
+<div class="highlight"><span class="filename">Batched Pairwise Distance</span><pre><span></span><code><span class="n">EinsOp</span><span class="p">(</span><span class="s1">&#39;batch n1 d, batch n2 d -&gt; batch n1 n2&#39;</span><span class="p">,</span>
+       <span class="n">combine</span><span class="o">=</span><span class="s1">&#39;add&#39;</span><span class="p">,</span> <span class="n">reduce</span><span class="o">=</span><span class="s1">&#39;l2_norm&#39;</span><span class="p">)(</span><span class="n">pts1</span><span class="p">,</span> <span class="o">-</span><span class="n">pts2</span><span class="p">)</span>
+</code></pre></div>
+<p>We're still using addition. Eins does not promise any particular ordering of inputs, so using
+combinations that aren't commutative and associative can lead to surprising problems. Negating one
+of the inputs is a more reliable way of computing the difference. (For some reason, it's also often
+faster!)</p>
+<p>That would give us the array of vectors between points, of shape <code class="highlight"><span class="n">batch</span> <span class="n">n1</span> <span class="n">n2</span> <span class="n">d</span></code>. We want a shape of
+<code class="highlight"><span class="n">batch</span> <span class="n">n1</span> <span class="n">n2</span></code>, so we have to eliminate the <code class="highlight"><span class="n">d</span></code> axis.</p>
+<p>We do this by computing the Euclidean norm: the square root of the sum of the squares of the values
+along the axis. This is called the <span class="arithmatex">\(L_2\)</span> norm, hence the name.</p>
+<h3 id="batched-mean-huber-loss">Batched Mean Huber Loss<a class="headerlink" href="#batched-mean-huber-loss" title="Permanent link">&para;</a></h3>
+<p>The literals that Eins accepts are documented properly in the type system, so you should get a handy
+autocomplete for a name like <code class="highlight"><span class="n">l2_norm</span></code>. The time will come when one of those options isn't
+appropriate, however. Eins supports various ways of supplying custom functions.</p>
+<p>One solution is to simply pass in your own function. Combinations should have two positional
+arguments and output an array of the same size, and custom reductions should take in a single
+positional argument and either <code class="highlight"><span class="n">axis</span></code> or <code class="highlight"><span class="n">dim</span></code> as keyword arguments.</p>
+<div class="highlight"><span class="filename">Batched Mean Huber Loss</span><pre><span></span><code><span class="kn">from</span> <span class="nn">torch.nn.functional</span> <span class="kn">import</span> <span class="n">huber_loss</span>
+
+<span class="n">EinsOp</span><span class="p">(</span><span class="s1">&#39;batch out_features, batch out_features -&gt; batch&#39;</span><span class="p">,</span>
+       <span class="n">combine</span><span class="o">=</span><span class="n">huber_loss</span><span class="p">,</span> <span class="n">reduce</span><span class="o">=</span><span class="s1">&#39;mean&#39;</span><span class="p">)(</span><span class="n">y</span><span class="p">,</span> <span class="n">y_hat</span><span class="p">)</span>
+</code></pre></div>
+<h2 id="composable-nonlinear-math">Composable Nonlinear Math<a class="headerlink" href="#composable-nonlinear-math" title="Permanent link">&para;</a></h2>
+<p>There's often a better way than passing in a custom function. We've only discussed operations that
+work on the level of shapes: either taking two arrays and combining them, or taking a single array
+and reducing an axis. There are two other kinds of operations Eins defines that don't modify the
+shape of the output:</p>
+<ul>
+<li><strong>Elementwise functions</strong> are basically just functions from real numbers to real numbers that you
+  can batch arbitrarily. Examples are <code class="highlight"><span class="n">np</span><span class="o">.</span><span class="n">sin</span></code>, <code class="highlight"><span class="n">np</span><span class="o">.</span><span class="n">abs</span></code>, and <code class="highlight"><span class="n">np</span><span class="o">.</span><span class="n">exp</span></code>. They have the signature
+  <code class="highlight"><span class="n">f</span><span class="p">(</span><span class="n">Array</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span></code>, and mathematically they're functions from a scalar to a scalar.</li>
+<li><strong>Transformations</strong> use an axis, but don't eliminate it. Examples are <code class="highlight"><span class="n">np</span><span class="o">.</span><span class="n">sort</span></code>, <code class="highlight"><span class="n">np</span><span class="o">.</span><span class="n">flip</span></code>,
+  <code class="highlight"><span class="n">np</span><span class="o">.</span><span class="n">roll</span></code>, and normalization. They have the signature <code class="highlight"><span class="n">f</span><span class="p">(</span><span class="n">Array</span><span class="p">,</span> <span class="n">axis</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span></code>, and
+  mathematically they're functions from a vector to a vector.</li>
+</ul>
+<p>Eins implements a library of these functions to go along with combinations and reductions. Combining
+them lets you make new functions that are easy to reason about and framework-agnostic. Passing in a
+sequence of operations applies them right-to-left, like functions. For example, although Eins
+already has <code class="highlight"><span class="s1">&#39;logaddexp&#39;</span></code>, you could instead pass in <code class="highlight"><span class="n">combine</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;log&#39;</span><span class="p">,</span> <span class="s1">&#39;add&#39;</span><span class="p">,</span> <span class="s1">&#39;exp&#39;</span><span class="p">)</span></code>.</p>
+<p>For combinations, you can pass in any number of elementwise operations, sandwiching a single
+combination operation. For reductions, we do know an axis, so transformations are allowed on top of
+elementwise operations and reductions. Once you reduce the axis, it's gone, so a transformation or
+reduction can't come after the first reduction.</p>
+<h3 id="approximate-numerical-equality">Approximate Numerical Equality<a class="headerlink" href="#approximate-numerical-equality" title="Permanent link">&para;</a></h3>
+<p>It's hard to give an example for "a common function Eins doesn't support", because the hope is that
+Eins supports what you're likely to use! So, even if a little contrived, let's say you're interested
+in finding whether two arrays are all equal within an epsilon. We could (and probably should) supply
+a custom function, but we can instead implement it using elementwise functions: rounding answers so
+only values above 1 show up.</p>
+<div class="highlight"><span class="filename">Batched Approximate Numerical Equality</span><pre><span></span><code><span class="n">eps</span> <span class="o">=</span> <span class="mf">1e-6</span>
+<span class="n">eps_apart</span> <span class="o">=</span> <span class="n">EinsOp</span><span class="p">(</span><span class="s1">&#39;batch dim, batch dim -&gt; batch&#39;</span><span class="p">,</span>
+                    <span class="n">combine</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;round&#39;</span><span class="p">,</span> <span class="s1">&#39;abs&#39;</span><span class="p">,</span> <span class="s1">&#39;add&#39;</span><span class="p">),</span>
+                    <span class="n">reduce</span><span class="o">=</span><span class="s1">&#39;max&#39;</span><span class="p">)</span>
+<span class="n">eps_apart</span><span class="p">(</span><span class="n">x</span> <span class="o">/</span> <span class="n">eps</span><span class="p">,</span> <span class="n">y</span> <span class="o">/</span> <span class="n">eps</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span>
+</code></pre></div>
+<h3 id="softmax-with-labeled-axes">Softmax with Labeled Axes<a class="headerlink" href="#softmax-with-labeled-axes" title="Permanent link">&para;</a></h3>
+<p>Elementwise functions aren't something you generally want to use outside of composition with other
+functions in Eins. If you know that you're using a JAX array, <code class="highlight"><span class="n">jnp</span><span class="o">.</span><span class="n">sin</span></code> is going to be just as clean
+and readable as anything Eins would provide. Transformations distinguish an axis, however, so the
+machinery Eins has for working with shapes makes those transformations easier to understand. Eins
+lets you write out transformations in a clearer way than frameworks that use indexed axes.</p>
+<p>Consider the transformer attention operation. The <a href="https://nlp.seas.harvard.edu/annotated-transformer/#encoder-and-decoder-stacks">Annotated
+Transformer</a> gives
+this equation and this code for the softmax in attention:</p>
+<div class="arithmatex">\[ \text{Attention}(Q, K, V) = \text{softmax}\left(\frac{Q K^T}{\sqrt{d_k}} \right) V \]</div>
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">attention</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="n">d_k</span> <span class="o">=</span> <span class="n">query</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">scores</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">key</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">))</span> <span class="o">/</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">d_k</span><span class="p">)</span>
+    <span class="n">p_attn</span> <span class="o">=</span> <span class="n">scores</span><span class="o">.</span><span class="n">softmax</span><span class="p">(</span><span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">p_attn</span><span class="p">,</span> <span class="n">value</span><span class="p">),</span> <span class="n">p_attn</span>
+</code></pre></div>
+<p>It's legitimately not clear what axis <code class="highlight"><span class="n">scores</span><span class="o">.</span><span class="n">softmax</span><span class="p">(</span><span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span></code> means in this context, and it's not
+indicated in the equation either. The Eins version clearly indicates what dimension we're applying
+softmax to:</p>
+<div class="highlight"><span class="filename">Softmax with Labeled Axes</span><pre><span></span><code><span class="n">p_attn</span> <span class="o">=</span> <span class="n">EinsOp</span><span class="p">(</span><span class="s1">&#39;batch q_seq k_seq heads&#39;</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;k_seq&#39;</span><span class="p">:</span> <span class="s1">&#39;softmax&#39;</span><span class="p">})(</span><span class="n">scores</span><span class="p">)</span>
+</code></pre></div>
+<p>In many applications of attention, <code class="highlight"><span class="n">q_seq</span></code> and <code class="highlight"><span class="n">k_seq</span></code> are the same size: there would be no
+indication that you were performing softmax incorrectly until things stopped working well.</p>
+<p>When you give <code class="highlight"><span class="n">EinsOp</span></code> an expression without an arrow, it considers your input as a single array,
+and leaves the shape unchanged. You can pass in a <code class="highlight"><span class="n">transform</span></code> mapping to indicate how you want to
+transform an axis. Eins does not guarantee an order of transformations, so if you do use multiple
+transformations make sure they're commutative.</p>
+<h3 id="typed-functions">Typed Functions<a class="headerlink" href="#typed-functions" title="Permanent link">&para;</a></h3>
+<p>Passing in strings is quick and doesn't require polluting the namespace, but it's not always easy to
+know what Eins allows you to write. For the price of a few more imports, you can use something
+closer to strong typing than string typing:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">eins</span> <span class="kn">import</span> <span class="n">ElementwiseOps</span> <span class="k">as</span> <span class="n">E</span>
+<span class="kn">from</span> <span class="nn">eins</span> <span class="kn">import</span> <span class="n">Reductions</span> <span class="k">as</span> <span class="n">R</span>
+<span class="kn">from</span> <span class="nn">eins</span> <span class="kn">import</span> <span class="n">Transformations</span> <span class="k">as</span> <span class="n">T</span>
+<span class="kn">from</span> <span class="nn">eins</span> <span class="kn">import</span> <span class="n">Combinations</span> <span class="k">as</span> <span class="n">C</span>
+</code></pre></div>
+<p>Feel free to use other names, but the analogy to <code class="highlight"><span class="kn">import</span> <span class="nn">torch.nn.functional</span> <span class="k">as</span> <span class="nn">F</span></code> is a good one:
+these are all simple namespaces with autocomplete-friendly interfaces for accessing functions. The
+different functions are all dataclasses that can be serialized and inspected easily.</p>
+<p>These namespaces support some customizations that can't be done through strings alone. For example,
+we can use softmax with temperature as <code class="highlight"><span class="n">T</span><span class="o">.</span><span class="n">Softmax</span><span class="p">(</span><span class="n">temperature</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span></code>. The <code class="highlight"><span class="n">l2_norm</span></code> we saw above can
+actually be any power, so we could do Manhattan distance through <code class="highlight"><span class="n">l1_norm</span></code> or even <code class="highlight"><span class="mf">2.4</span><span class="n">_norm</span></code>. At
+that point, however, you're probably better off writing <code class="highlight"><span class="n">R</span><span class="o">.</span><span class="n">PowerNorm</span><span class="p">(</span><span class="n">power</span><span class="o">=</span><span class="mf">2.4</span><span class="p">)</span></code>.</p>
+<p>In addition, because these namespaces are typed, Eins knows what you want to do with them, and so
+these let you provide custom functions in more situations. Eins will only accept raw functions if
+they're the only input, because otherwise it's unclear what the signature is.</p>
+<h2 id="next-steps">Next Steps<a class="headerlink" href="#next-steps" title="Permanent link">&para;</a></h2>
+<p>That's everything you need to get good use out of Eins! Feel free to check out <a href="../in-depth/">Advanced
+Eins</a> if you want to learn more.</p>
+
+
+
+
+
+
+
+  
+  
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12Z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    <script id="__config" type="application/json">{"base": "..", "features": ["content.tooltips", "content.code.copy", "navigation.top", "navigation.expand", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.path", "search.suggest", "search.highlight", "search.share", "toc.integrate"], "search": "../assets/javascripts/workers/search.b8dbb3d2.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.3220b9d7.min.js"></script>
+      
+        <script src="../javascripts/katex.js"></script>
+      
+        <script src="../assets/external/cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.7/katex.min.js"></script>
+      
+        <script src="../assets/external/cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.7/contrib/auto-render.min.js"></script>
+      
+        <script src="../assets/external/unpkg.com/mermaid@10.7.0/dist/mermaid.min.js"></script>
+      
+    
+  </body>
+</html>

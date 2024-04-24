@@ -1,0 +1,743 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../tutorial/">
+      
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.5.18">
+    
+    
+      
+        <title>Advanced Eins - Eins</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.66ac8b77.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+    
+    
+      <link rel="stylesheet" href="../mkapi-common.css">
+    
+      <link rel="stylesheet" href="../mkapi-material.css">
+    
+      <link rel="stylesheet" href="../assets/external/cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.7/katex.min.css">
+    
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+      
+        <meta  property="og:type"  content="website" >
+      
+        <meta  property="og:title"  content="Advanced Eins - Eins" >
+      
+        <meta  property="og:description"  content="None" >
+      
+        <meta  property="og:image"  content="./assets/images/social/in-depth.png" >
+      
+        <meta  property="og:image:type"  content="image/png" >
+      
+        <meta  property="og:image:width"  content="1200" >
+      
+        <meta  property="og:image:height"  content="630" >
+      
+        <meta  property="og:url"  content="None" >
+      
+        <meta  name="twitter:card"  content="summary_large_image" >
+      
+        <meta  name="twitter:title"  content="Advanced Eins - Eins" >
+      
+        <meta  name="twitter:description"  content="None" >
+      
+        <meta  name="twitter:image"  content="./assets/images/social/in-depth.png" >
+      
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="pink" data-md-color-accent="red">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#advanced-eins" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Eins" class="md-header__button md-logo" aria-label="Eins" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Eins
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Advanced Eins
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="pink" data-md-color-accent="red"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.5.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M223.5 32C100 32 0 132.3 0 256s100 224 223.5 224c60.6 0 115.5-24.2 155.8-63.4 5-4.9 6.3-12.5 3.1-18.7s-10.1-9.7-17-8.5c-9.8 1.7-19.8 2.6-30.1 2.6-96.9 0-175.5-78.8-175.5-176 0-65.8 36-123.1 89.3-153.3 6.1-3.5 9.2-10.5 7.7-17.3s-7.3-11.9-14.3-12.5c-6.3-.5-12.6-.8-19-.8z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="pink" data-md-color-accent="red"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.5.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M361.5 1.2c5 2.1 8.6 6.6 9.6 11.9L391 121l107.9 19.8c5.3 1 9.8 4.6 11.9 9.6s1.5 10.7-1.6 15.2L446.9 256l62.3 90.3c3.1 4.5 3.7 10.2 1.6 15.2s-6.6 8.6-11.9 9.6L391 391l-19.9 107.9c-1 5.3-4.6 9.8-9.6 11.9s-10.7 1.5-15.2-1.6L256 446.9l-90.3 62.3c-4.5 3.1-10.2 3.7-15.2 1.6s-8.6-6.6-9.6-11.9L121 391 13.1 371.1c-5.3-1-9.8-4.6-11.9-9.6s-1.5-10.7 1.6-15.2L65.1 256 2.8 165.7c-3.1-4.5-3.7-10.2-1.6-15.2s6.6-8.6 11.9-9.6L121 121l19.9-107.9c1-5.3 4.6-9.8 9.6-11.9s10.7-1.5 15.2 1.6L256 65.1l90.3-62.3c4.5-3.1 10.2-3.7 15.2-1.6zM160 256a96 96 0 1 1 192 0 96 96 0 1 1-192 0zm224 0a128 128 0 1 0-256 0 128 128 0 1 0 256 0z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var media,input,key,value,palette=__md_get("__palette");if(palette&&palette.color){"(prefers-color-scheme)"===palette.color.media&&(media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']"),palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent"));for([key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+          <a href="javascript:void(0)" class="md-search__icon md-icon" title="Share" aria-label="Share" data-clipboard data-clipboard-text="" data-md-component="search-share" tabindex="-1">
+            
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7 0-.24-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.15c-.05.21-.08.43-.08.66 0 1.61 1.31 2.91 2.92 2.91 1.61 0 2.92-1.3 2.92-2.91A2.92 2.92 0 0 0 18 16.08Z"/></svg>
+          </a>
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/nicholas-miklaucic/eins" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.5.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../tutorial/" class="md-tabs__link">
+        
+  
+    
+  
+  Tutorial
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+    
+  
+  
+    <li class="md-tabs__item md-tabs__item--active">
+      <a href="./" class="md-tabs__link">
+        
+  
+    
+  
+  Advanced Eins
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        
+  
+    
+  
+  API Reference
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--lifted md-nav--integrated" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Eins" class="md-nav__button md-logo" aria-label="Eins" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    Eins
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/nicholas-miklaucic/eins" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.5.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Home
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorial/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Tutorial
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Advanced Eins
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Advanced Eins
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#beyond-tensor-shapes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Beyond Tensor Shapes
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Beyond Tensor Shapes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#combinations" class="md-nav__link">
+    <span class="md-ellipsis">
+      Combinations
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#reductions" class="md-nav__link">
+    <span class="md-ellipsis">
+      Reductions
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#elementwise-operations" class="md-nav__link">
+    <span class="md-ellipsis">
+      Elementwise Operations
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#transformations" class="md-nav__link">
+    <span class="md-ellipsis">
+      Transformations
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#composing-functions" class="md-nav__link">
+    <span class="md-ellipsis">
+      Composing Functions
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#explicit-function-objects" class="md-nav__link">
+    <span class="md-ellipsis">
+      Explicit Function Objects
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#standalone-operator-usage" class="md-nav__link">
+    <span class="md-ellipsis">
+      Standalone Operator Usage
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    API Reference
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+  
+  
+
+
+<h1 id="advanced-eins">Advanced Eins<a class="headerlink" href="#advanced-eins" title="Permanent link">&para;</a></h1>
+<p>If you're totally new to Eins or <code class="highlight"><span class="n">einops</span></code> and want to see what the fuss is about, read the
+<a href="../tutorial/">tutorial</a>. If you're interested in maximizing the power of Eins, you're in the right
+place!</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">eins</span> <span class="kn">import</span> <span class="n">EinsOp</span>
+</code></pre></div>
+<h2 id="beyond-tensor-shapes">Beyond Tensor Shapes<a class="headerlink" href="#beyond-tensor-shapes" title="Permanent link">&para;</a></h2>
+<p>Consider an operation <code class="highlight"><span class="n">a</span> <span class="n">b</span><span class="p">,</span> <span class="n">b</span> <span class="n">c</span> <span class="o">-&gt;</span> <span class="n">a</span> <span class="n">c</span></code>. This could be matrix multiplication, but it could also be pairwise distances or
+many other things. To control the computation that's being performed beyond the shapes of the inputs and output, Eins
+defines four kinds of functions that specify what's actually happening:</p>
+<h3 id="combinations">Combinations<a class="headerlink" href="#combinations" title="Permanent link">&para;</a></h3>
+<p>Combinations are, mathematically, functions that take two scalars and output a scalar. In Eins,
+combinations should be vectorized, taking in two arrays of the same shape and returning an array of
+that shape. The most common examples are <code class="highlight"><span class="n">np</span><span class="o">.</span><span class="n">add</span></code> and <code class="highlight"><span class="n">np</span><span class="o">.</span><span class="n">multiply</span></code>.</p>
+<p><strong>Common examples</strong>: <code class="highlight"><span class="s1">&#39;add&#39;</span></code>, <code class="highlight"><span class="s1">&#39;multiply&#39;</span></code>, <code class="highlight"><span class="s1">&#39;minimum&#39;</span></code>, <code class="highlight"><span class="s1">&#39;maximum&#39;</span></code></p>
+<div class="admonition danger">
+<p class="admonition-title">Danger</p>
+<p>Eins assumes that a combination is commutative and associative, and it makes no guarantees about the
+order your arrays are combined. If you supply custom functions, that responsibility is yours.</p>
+</div>
+<h3 id="reductions">Reductions<a class="headerlink" href="#reductions" title="Permanent link">&para;</a></h3>
+<p>Reductions are essentially functions that take in a vector of any size and return a scalar, like
+<code class="highlight"><span class="n">np</span><span class="o">.</span><span class="n">sum</span></code>. (These are sometimes called aggregations.) In Eins, they're functions that take an array
+and an axis and return an array with that axis removed.</p>
+<p>If you pass in a combination, Eins will essentially apply <code class="highlight"><span class="n">functools</span><span class="o">.</span><span class="n">reduce</span></code> and use that
+combination to reduce the axis. In general, however, there are more efficient ways of doing the same
+thing: a folded <code class="highlight"><span class="s1">&#39;add&#39;</span></code> is just a slower <code class="highlight"><span class="s1">&#39;sum&#39;</span></code>, and a folded <code class="highlight"><span class="n">hypot</span></code> is just a slower <code class="highlight"><span class="n">l2</span><span class="o">-</span><span class="n">norm</span></code>.</p>
+<p><strong>Common examples</strong>: <code class="highlight"><span class="s1">&#39;sum&#39;</span></code>, <code class="highlight"><span class="s1">&#39;prod&#39;</span></code>, <code class="highlight"><span class="s1">&#39;l2_norm&#39;</span></code>, <code class="highlight"><span class="s1">&#39;min&#39;</span></code>, <code class="highlight"><span class="s1">&#39;max&#39;</span></code>.</p>
+<p>Note the naming conventions, matching NumPy nomenclature. <code class="highlight"><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span></code> computes the max along axis 0,
+eliminating it. <code class="highlight"><span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">arr1</span><span class="p">,</span> <span class="n">arr2</span><span class="p">)</span></code> is the elementwise maximum between two arrays.</p>
+<div class="admonition danger">
+<p class="admonition-title">Danger</p>
+<p>If you reduce more than once in a program, Eins assumes you know what you're doing and that the
+operation would be the same either way, like summing over two axes. If you supply a custom function,
+make sure there is only one potential output.</p>
+</div>
+<h3 id="elementwise-operations">Elementwise Operations<a class="headerlink" href="#elementwise-operations" title="Permanent link">&para;</a></h3>
+<p>An elementwise operation should be thought of as a function that takes a scalar and outputs a
+scalar. Eins requires that the operation is <em>vectorized</em>, so it takes in an array and outputs an
+array of the same shape.</p>
+<p><strong>Common examples</strong>: <code class="highlight"><span class="s1">&#39;log&#39;</span></code>, <code class="highlight"><span class="s1">&#39;exp&#39;</span></code>, <code class="highlight"><span class="s1">&#39;tanh&#39;</span></code>, <code class="highlight"><span class="s1">&#39;square&#39;</span></code>, <code class="highlight"><span class="s1">&#39;sqrt&#39;</span></code></p>
+<h3 id="transformations">Transformations<a class="headerlink" href="#transformations" title="Permanent link">&para;</a></h3>
+<p>Named after the <code class="highlight"><span class="o">.</span><span class="n">transform</span></code> method in Pandas, transformations should be thought of mathematically
+as functions that take in a vector of any size and produce a vector of the same size. Think of
+sorting or standardization: you need multiple inputs for standardization to make sense, but at the
+end you haven't changed the shape of the array.</p>
+<p>In Eins, transformations take in a single array and <code class="highlight"><span class="n">axis</span></code>, like reductions, but they don't
+eliminate the axis. For example, <code class="highlight"><span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span></code> is different than <code class="highlight"><span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span></code>,
+but both return an array of the same shape as <code class="highlight"><span class="n">arr</span></code>.</p>
+<p>Just like a folded combination becomes a reduction, a <em>scanned</em> or <em>accumulated</em> combination becomes
+a transformation. Note that the way NumPy and other libraries notate these differs from the idea of
+a scan. <code class="highlight"><span class="n">cumprod</span></code>, in Eins, is really just an alias for <code class="highlight"><span class="n">cummultiply</span></code>, because Eins uses the
+combination rather than the reduction. If you have an array with elements <code class="highlight"><span class="p">[</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">d</span><span class="p">]</span></code> and an
+operator like <code class="highlight"><span class="o">*</span></code>, then Eins computes</p>
+<div class="highlight"><pre><span></span><code><span class="p">[</span><span class="n">a</span><span class="p">,</span> <span class="n">a</span> <span class="o">*</span> <span class="n">b</span><span class="p">,</span> <span class="p">(</span><span class="n">a</span> <span class="o">*</span> <span class="n">b</span><span class="p">)</span> <span class="o">*</span> <span class="n">c</span><span class="p">,</span> <span class="p">((</span><span class="n">a</span> <span class="o">*</span> <span class="n">b</span><span class="p">)</span> <span class="o">*</span> <span class="n">c</span><span class="p">)</span> <span class="o">*</span> <span class="n">d</span><span class="p">]</span>
+</code></pre></div>
+<p><strong>Common examples</strong>: <code class="highlight"><span class="s1">&#39;sort&#39;</span></code>, <code class="highlight"><span class="s1">&#39;l2_normalize&#39;</span></code>, <code class="highlight"><span class="s1">&#39;min_max_normalize&#39;</span></code></p>
+<h3 id="composing-functions">Composing Functions<a class="headerlink" href="#composing-functions" title="Permanent link">&para;</a></h3>
+<p>Eins uses <code class="highlight"><span class="n">combine</span></code> and <code class="highlight"><span class="n">reduce</span></code> arguments that specify how to combine inputs and how to reduce axes. The point of
+elementwise operations and transformations is that they can be composed with combinations and reductions.</p>
+<p>Functions are applied right-to-left, matching existing nomenclature and function composition. For example, if
+<code class="highlight"><span class="s1">&#39;logaddexp&#39;</span></code> weren't already a supported combination, you could replicate the functionality as <code class="highlight"><span class="p">(</span><span class="s1">&#39;log&#39;</span><span class="p">,</span> <span class="s1">&#39;add&#39;</span><span class="p">,</span> <span class="s1">&#39;exp&#39;</span><span class="p">)</span></code>.
+This computes the logarithm of the sum of the exponentials of the inputs.</p>
+<p>Similarly, if you wanted to compute root-mean-square error along an axis, you could use
+<code class="highlight"><span class="n">reduce</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;sqrt&#39;</span><span class="p">,</span> <span class="s1">&#39;mean&#39;</span><span class="p">,</span> <span class="s1">&#39;square&#39;</span><span class="p">)</span></code>. This is common enough to get its own name: <code class="highlight"><span class="s1">&#39;l2_norm&#39;</span></code>.</p>
+<h3 id="explicit-function-objects">Explicit Function Objects<a class="headerlink" href="#explicit-function-objects" title="Permanent link">&para;</a></h3>
+<p>Eins supports a relatively sophisticated "stringly-typed" input format, as you've seen above. This
+means you rarely need any imports beyond <code class="highlight"><span class="n">EinsOp</span></code>, and you can easily serialize the description of
+the operation, but it does also make it harder to know what functions Eins defines or use your own.</p>
+<p>If you prefer, you can instead pass in explicit objects: <code class="highlight"><span class="n">Combination</span></code>, <code class="highlight"><span class="n">Reduction</span></code>,
+<code class="highlight"><span class="n">ElementwiseOp</span></code>, and <code class="highlight"><span class="n">Transformation</span></code>. These are each base classes that you can implement yourself,
+but it's easiest to use the associated object exported from the base namespace: <code class="highlight"><span class="n">Combinations</span></code>,
+<code class="highlight"><span class="n">Reductions</span></code>, etc. These namespaces provide an autocomplete-friendly way of using these operations.</p>
+<p>Explicit objects are the only way to specify compositions with function syntax. If you pass in a callable to <code class="highlight"><span class="n">combine</span></code>
+or <code class="highlight"><span class="n">reduce</span></code>, Eins will assume it has the correct signature, but if you pass in <code class="highlight"><span class="p">(</span><span class="n">my_func1</span><span class="p">,</span> <span class="n">my_func2</span><span class="p">)</span></code> Eins has no way of
+knowing what's what. Instead, you can do:</p>
+<div class="highlight"><span class="filename">Batched Kurtosis</span><pre><span></span><code><span class="kn">from</span> <span class="nn">eins</span> <span class="kn">import</span> <span class="n">EinsOp</span><span class="p">,</span> <span class="n">Reductions</span> <span class="k">as</span> <span class="n">R</span><span class="p">,</span> <span class="n">ElementwiseOps</span> <span class="k">as</span> <span class="n">E</span>
+<span class="kn">from</span> <span class="nn">scipy.stats</span> <span class="kn">import</span> <span class="n">kurtosis</span>
+<span class="c1"># kurtosis has signature (x, axis=0, ...)</span>
+
+<span class="n">EinsOp</span><span class="p">(</span><span class="s1">&#39;batch sample_size -&gt; batch&#39;</span><span class="p">,</span> <span class="n">reduce</span><span class="o">=</span><span class="p">(</span><span class="n">E</span><span class="o">.</span><span class="n">abs</span><span class="p">,</span> <span class="n">R</span><span class="o">.</span><span class="n">from_func</span><span class="p">(</span><span class="n">kurtosis</span><span class="p">)))</span>
+</code></pre></div>
+<h2 id="standalone-operator-usage">Standalone Operator Usage<a class="headerlink" href="#standalone-operator-usage" title="Permanent link">&para;</a></h2>
+<p>For backend-agnostic code or simply as a wrapper for functionality Eins implements that isn't available in all libraries, there's no reason you can't just use the above functions outside of an EinsOp context:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">eins</span> <span class="kn">import</span> <span class="n">Reductions</span> <span class="k">as</span> <span class="n">R</span><span class="p">,</span> <span class="n">Transformations</span> <span class="k">as</span> <span class="n">T</span>
+
+<span class="c1"># 1.5-norm: somewhere between Manhattan and Euclidean distance</span>
+<span class="c1"># akin to torch.nn.functional.normalize, but no direct numpy equivalent</span>
+
+<span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">128</span><span class="p">,</span> <span class="mi">64</span><span class="p">)</span>
+
+<span class="n">R</span><span class="o">.</span><span class="n">PowerNorm</span><span class="p">(</span><span class="mf">1.5</span><span class="p">)(</span><span class="n">data</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="c1"># Normalize so the 1.5-norm is 1: same shape as input</span>
+<span class="n">T</span><span class="o">.</span><span class="n">PowerNormalize</span><span class="p">(</span><span class="mf">1.5</span><span class="p">)(</span><span class="n">data</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</code></pre></div>
+
+
+
+
+
+
+
+  
+  
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12Z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    <script id="__config" type="application/json">{"base": "..", "features": ["content.tooltips", "content.code.copy", "navigation.top", "navigation.expand", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.path", "search.suggest", "search.highlight", "search.share", "toc.integrate"], "search": "../assets/javascripts/workers/search.b8dbb3d2.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.3220b9d7.min.js"></script>
+      
+        <script src="../javascripts/katex.js"></script>
+      
+        <script src="../assets/external/cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.7/katex.min.js"></script>
+      
+        <script src="../assets/external/cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.7/contrib/auto-render.min.js"></script>
+      
+        <script src="../assets/external/unpkg.com/mermaid@10.7.0/dist/mermaid.min.js"></script>
+      
+    
+  </body>
+</html>
