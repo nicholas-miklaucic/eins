@@ -2,13 +2,13 @@ import numpy as np
 import pytest
 from pyparsing import ParseException
 
-from eins.einsop import einsop
+from eins import EinsOp
 from eins.parsing import expr
 
 
 def run_with_randn(op_str: str, *shapes, **kwargs):
     tensors = [np.random.randn(*shape) for shape in shapes]
-    return tensors, einsop(op_str, *tensors, **kwargs)
+    return tensors, EinsOp(op_str, **kwargs)(*tensors)
 
 
 def test_matrix_mul():

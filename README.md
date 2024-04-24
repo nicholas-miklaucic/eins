@@ -68,7 +68,7 @@ Eins is still in heavy development. Here's a sense of where we're headed.
 ### Near-Term (weeks)
 
 - [ ] Updating indexing syntax to match `eindex`
-- [ ] Unit array to indicate zero-dimensional tensors
+- [x] Unit array to indicate zero-dimensional tensors
 - [ ] `...` for batching over dynamic numbers of batch axes
 - [ ] Specifying intermediate results to control the order of reduction
 - [ ] Support `-` and `/`

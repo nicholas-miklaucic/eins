@@ -470,8 +470,17 @@ class EinsOp:
                 self.concrete.clear()
                 return ans
         except ValueError as err:
+            ops = [arg.strip() for arg in self.op_str.split('->')[0].split(',')]
+            shapes = []
+            for op, arr in zip(ops, tensors):
+                shape = ' '.join(map(str, arr.shape))
+                shapes.append(f'{op:>20}\t{shape:<20}')
+
+            shapes = '\n'.join(shapes)
             msg = f"""
 Error occurred during computation.
+Input shapes:
+{shapes}
 {self}
 """
             raise ValueError(msg) from err

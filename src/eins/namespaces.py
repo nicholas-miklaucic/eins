@@ -1,3 +1,5 @@
+from typing import Type
+
 from eins.combination import CustomCombination
 from eins.combination import ops as _combination_ops
 from eins.common_types import (
@@ -61,7 +63,7 @@ class ElementwiseOps:
     """Namespace for built-in elementwise operations."""
 
     #: Affine transform: Affine(scale, shift) = x * scale + shift.
-    Affine: _Affine = _Affine
+    Affine: Type[_Affine] = _Affine
 
     #: Absolute value.
     abs: ElementwiseOp = _elementwise_ops['abs']
@@ -143,11 +145,11 @@ class Transformations:
     """Namespace for built-in transformation operations."""
 
     #: Power normalization.
-    PowerNormalize: _PowerNormalize = _PowerNormalize
+    PowerNormalize: Type[_PowerNormalize] = _PowerNormalize
     #: Softmax with optional temperature.
-    Softmax: _Softmax = _Softmax
+    Softmax: Type[_Softmax] = _Softmax
     #: Scanned combination operation: e.g., cumulative sum.
-    Scan: _Scan = _Scan
+    Scan: Type[_Scan] = _Scan
     #: Sort
     sort = _transformation_ops['sort']
     #: Cumulative sum.
@@ -176,9 +178,9 @@ class Reductions:
     """Namespace for built-in reduction operations."""
 
     #: Power norm: 1 is L1 norm, 2 is L2 norm.
-    PowerNorm: _PowerNorm = _PowerNorm
+    PowerNorm: Type[_PowerNorm] = _PowerNorm
     #: Fold operation: e.g., folded add is sum.
-    Fold: _Fold = _Fold
+    Fold: Type[_Fold] = _Fold
     #: Sum.
     sum: Reduction = _reduction_ops['sum']
     #: Mean.

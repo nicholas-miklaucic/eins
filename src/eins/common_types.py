@@ -86,7 +86,7 @@ class Combination(metaclass=ABCMeta):
         return None
 
     @abstractmethod
-    def __call__(self, arr1: Array, arr2: Array) -> Array:
+    def __call__(self, arr1: Arr, arr2: Arr) -> Arr:
         """Applies the function to the two inputs, returning a single output."""
         raise NotImplementedError
 
@@ -118,7 +118,7 @@ class Reduction(metaclass=ABCMeta):
         return None
 
     @abstractmethod
-    def __call__(self, arr: Array, axis: int = 0) -> Array:
+    def __call__(self, arr: Arr, axis: int = 0) -> Arr:
         """
         Applies the combination to an array on an axis, eliminating it. a1 *rest -> *rest.
         """
@@ -140,7 +140,7 @@ class Transformation(metaclass=ABCMeta):
         return None
 
     @abstractmethod
-    def __call__(self, arr: Array, axis: int = 0) -> Array:
+    def __call__(self, arr: Arr, axis: int = 0) -> Arr:
         """Applies the transformation to an array on an axis."""
         raise NotImplementedError
 
@@ -151,7 +151,7 @@ class ElementwiseOp(metaclass=ABCMeta):
     Array.
     """
 
-    def commutes_with(self, op: Combination) -> bool:  # noqa: ARG002
+    def commutes_with(self, op: Union[Combination, Reduction]) -> bool:  # noqa: ARG002
         """Returns whether op(f(x), f(y)) == f(op(x, y))."""
         # by default, assume it doesn't: this is safe.
         return False
@@ -166,7 +166,7 @@ class ElementwiseOp(metaclass=ABCMeta):
         return None
 
     @abstractmethod
-    def __call__(self, arr: Array) -> Array:
+    def __call__(self, arr: Arr) -> Arr:
         """Applies the function elementwise."""
         raise NotImplementedError
 

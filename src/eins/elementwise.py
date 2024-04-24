@@ -2,11 +2,12 @@
 
 import typing
 from dataclasses import dataclass
-from typing import Callable, Literal, Optional, Union
+from typing import Callable, Literal, Optional, TypeVar, Union, cast
 
 import array_api_compat
 
-from eins.common_types import Array, ElementwiseFunc, ElementwiseOp
+from eins.combination import ArrayCombination
+from eins.common_types import Array, Combination, ElementwiseFunc, ElementwiseOp, Reduction
 from eins.utils import array_backend
 
 # https://data-apis.org/array-api/latest/API_specification/elementwise_functions.html Every method
@@ -49,6 +50,8 @@ ArrayElementwiseLiteral = Literal[
 
 ARRAY_ELEMWISE_OPS = typing.get_args(ArrayElementwiseLiteral)
 
+Arr = TypeVar('Arr', bound=Array)
+
 
 @dataclass(frozen=True, unsafe_hash=True)
 class ArrayElementwiseOp(ElementwiseOp):
@@ -66,7 +69,54 @@ class ArrayElementwiseOp(ElementwiseOp):
         else:
             return None
 
-    def __call__(self, arr: Array) -> Array:
+    def commutes_with(self, op: Union[Combination, Reduction]) -> bool:
+        if self.func_name == 'positive':
+            return True
+
+        if hasattr(op, 'fold_of'):
+            op = cast(Reduction, op)
+            combo = op.fold_of()
+            if combo is None:
+                return False
+            else:
+                return self.commutes_with(combo)
+
+        if op == ArrayCombination('add'):
+            return self.func_name in ('negative', 'conj', 'real', 'imag')
+        elif op == ArrayCombination('multiply'):
+            return self.func_name in ('conj', 'square', 'sqrt', 'abs', 'sign')
+        elif op == ArrayCombination('minimum') or op == ArrayCombination('maximum'):
+            # monotonic functions
+            return self.func_name in (
+                'asin',
+                'asinh',
+                'sinh',
+                'acosh',
+                'atan',
+                'atanh',
+                'tanh',
+                'sqrt',
+                'log',
+                'log1p',
+                'exp',
+                'expm1',
+                'log2',
+                'log10',
+                'positive',
+                'floor',
+                'ceil',
+                'sign',
+                'trunc',
+                'round',
+            )
+        elif op == ArrayCombination('hypot'):
+            return self.func_name in ('abs', 'conj')
+        elif op == ArrayCombination('logaddexp'):
+            return False
+        else:
+            return False
+
+    def __call__(self, arr: Arr) -> Arr:
         xp = array_backend(arr)
         if hasattr(xp, self.func_name):
             func = getattr(xp, self.func_name)
@@ -86,7 +136,7 @@ class CustomElementwiseOp(ElementwiseOp):
 
     func: ElementwiseFunc
 
-    def __call__(self, arr: Array) -> Array:
+    def __call__(self, arr: Arr) -> Arr:
         return self.func(arr)
 
 
@@ -101,8 +151,31 @@ class Affine(ElementwiseOp):
     scale: float = 1.0
     shift: float = 0.0
 
-    def __call__(self, arr: Array) -> Array:
+    def commutes_with(self, op: Union[Combination, Reduction]) -> bool:
+        return super().commutes_with(op)
+
+    def __call__(self, arr: Arr) -> Arr:
         return arr * self.scale + self.shift
+
+
+@dataclass(frozen=True, unsafe_hash=True)
+class Power(ElementwiseOp):
+    """
+    Power transformation.
+
+    Applies f(x) = x ** power.
+    """
+
+    power: float = 1.0
+
+    def commutes_with(self, op: Combination) -> bool:
+        if op == ArrayCombination('mul'):
+            return True
+        else:
+            return False
+
+    def __call__(self, arr: Arr) -> Arr:
+        return arr**self.power
 
 
 @dataclass(frozen=True, unsafe_hash=True)
@@ -138,7 +211,7 @@ class DelegatedElementwiseOp(ElementwiseOp):
         else:
             return func_or_name
 
-    def __call__(self, arr: Array) -> Array:
+    def __call__(self, arr: Arr) -> Arr:
         if array_api_compat.is_torch_array(arr):
             module = 'torch'
         elif array_api_compat.is_jax_array(arr):

@@ -128,7 +128,7 @@ class PowerNormalize(Transformation):
     Parses like norm, but instead of norm it's normalize.
     """
 
-    norm: PowerNorm = DEFAULT_NORM
+    power: float = 2.0
     eps: float = 1e-12
 
     @classmethod
@@ -136,14 +136,14 @@ class PowerNormalize(Transformation):
         if name.endswith('normalize'):
             norm = PowerNorm.parse(name[: -len('alize')])
             if norm is not None:
-                return cls(norm=norm)
+                return cls(power=norm.power)
 
         return None
 
     def __call__(self, arr: Array, axis: int = 0) -> Array:
         xp = array_backend(arr)
         if xp is not None:
-            norm = xp.expand_dims(self.norm(arr, axis=axis), axis=axis)
+            norm = xp.expand_dims(PowerNorm(self.power)(arr, axis=axis), axis=axis)
             return arr / xp.maximum(norm, self.eps)
         else:
             msg = f'Cannot normalize non-Array {arr} of type {type(arr)}'
@@ -247,7 +247,7 @@ def _generic_softmax(arr: Array, axis: int = 0) -> Array:
     amax = xp.expand_dims(xp.max(arr, axis=axis), axis=axis)
     exp_shifted = xp.exp(arr - amax)
 
-    return PowerNormalize(PowerNorm(1.0))(exp_shifted)
+    return PowerNormalize(1.0)(exp_shifted)
 
 
 _SoftmaxDelegate = DelegatedTransformation(

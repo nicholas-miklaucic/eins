@@ -143,7 +143,7 @@ class Constraints:
 
         log: dict[str, Callable[[int, int], int]] = {
             '+': lambda x, n: x // n,
-            '*': lambda x, n: int(x ** (1 / n)),
+            '*': lambda x, n: round(x ** (1 / n)),
         }
         lhs_val = self.value_of(lhs)
         rhs_val = self.value_of(rhs)

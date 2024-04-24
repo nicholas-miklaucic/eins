@@ -9,7 +9,7 @@ from eins.common_types import Array, ArrayBackend
 from eins.namespaces import ElementwiseOps
 
 # Set this to 'jax', 'numpy', or 'torch'
-BACKEND = 'jax'
+BACKEND = 'numpy'
 
 if BACKEND == 'jax':
     import jax.numpy as jnp
@@ -137,7 +137,7 @@ x = randn(8, 6, 32)
 y = randn(8, 6, 32)
 op = EinsOp('b n1 d, b n2 d -> b n1 n2', combine='add', reduce='l2_norm')
 z1 = op(x, -y)
-z2 = EinsOp('b n1 d, b n2 d -> b n1 n2', combine='add', reduce=('sum', 'square'))(x, -y)
+z2 = EinsOp('b n1 d, b n2 d -> b n1 n2', combine='add', reduce=('sqrt', 'sum', 'square'))(x, -y)
 z3 = EinsOp('b n1 d, b n2 d -> b n1 n2', combine='add', reduce='hypot')(x, -y)
 z4 = EinsOp('b n1 d, b n2 d -> b n1 n2', combine='add', reduce=R.l2_norm)(x, -y)
 

@@ -15,43 +15,64 @@ many other things. To control the computation that's being performed beyond the 
 defines four kinds of functions that specify what's actually happening:
 
 ### Combinations
-Combinations are elementwise functions that combine two arrays into a new array of the same shape. The default,
-`'multiply'`, multiplies inputs, as in matrix multiplication.
-
-It's much easier to ensure Eins does what you want when these are commutative and associative. Instead of trying to
-specify subtraction, use addition and then negate the input you want to subtract. This gives Eins freedom to optimize
-your computation.
+Combinations are, mathematically, functions that take two scalars and output a scalar. In Eins,
+combinations should be vectorized, taking in two arrays of the same shape and returning an array of
+that shape. The most common examples are `np.add` and `np.multiply`.
 
 **Common examples**: `'add'`, `'multiply'`, `'minimum'`, `'maximum'`
 
-### Reductions
-Reductions take a single array and an axis and eliminate that axis. The default, `'sum'`, sums over an axis, as in
-matrix multiplication.
 
-If you pass in a combination, Eins will essentially apply `functools.reduce` and use that combination to reduce the
-axis. In general, however, there are more efficient ways of doing the same thing: a folded `'add'` is just a slower
-`'sum'`, and a folded `hypot` is just a slower `l2-norm`.
+!!! danger
+
+    Eins assumes that a combination is commutative and associative, and it makes no guarantees about the
+    order your arrays are combined. If you supply custom functions, that responsibility is yours.
+
+### Reductions
+Reductions are essentially functions that take in a vector of any size and return a scalar, like
+`np.sum`. (These are sometimes called aggregations.) In Eins, they're functions that take an array
+and an axis and return an array with that axis removed.
+
+If you pass in a combination, Eins will essentially apply `functools.reduce` and use that
+combination to reduce the axis. In general, however, there are more efficient ways of doing the same
+thing: a folded `'add'` is just a slower `'sum'`, and a folded `hypot` is just a slower `l2-norm`.
 
 **Common examples**: `'sum'`, `'prod'`, `'l2_norm'`, `'min'`, `'max'`.
 
 Note the naming conventions, matching NumPy nomenclature. `np.max(arr, axis=0)` computes the max along axis 0,
 eliminating it. `np.maximum(arr1, arr2)` is the elementwise maximum between two arrays.
 
+!!! danger
+
+    If you reduce more than once in a program, Eins assumes you know what you're doing and that the
+    operation would be the same either way, like summing over two axes. If you supply a custom function,
+    make sure there is only one potential output.
+
+
+
 ### Elementwise Operations
-An elementwise op takes in a single array and returns an array of the same size, applying an operation individually to
-each element. Eins doesn't use these explicitly, but you can combine them with combinations or reductions to
-ergonomically represent more complex functions.
+
+An elementwise operation should be thought of as a function that takes a scalar and outputs a
+scalar. Eins requires that the operation is *vectorized*, so it takes in an array and outputs an
+array of the same shape.
 
 **Common examples**: `'log'`, `'exp'`, `'tanh'`, `'square'`, `'sqrt'`
 
 ### Transformations
-Named after the `.transform` method in Pandas, transformations take in a single array and `axis`, like reductions, but
-they don't eliminate the axis. For example, `np.sort(arr, axis=0)` is different than `np.sort(arr, axis=1)`, but both
-return the same shape.
 
-Just like a folded combination becomes a reduction, a *scanned* or *accumulated* combination becomes a transformation.
-Note that the way NumPy and other libraries notate these differs from the idea of a scan. `cumprod`, in Eins, is really
-just an alias for `cummultiply`, because Eins uses the combination rather than the reduction. If you have an array with elements `[a, b, c, d]` and an operator like `*`, then Eins computes
+Named after the `.transform` method in Pandas, transformations should be thought of mathematically
+as functions that take in a vector of any size and produce a vector of the same size. Think of
+sorting or standardization: you need multiple inputs for standardization to make sense, but at the
+end you haven't changed the shape of the array.
+
+In Eins, transformations take in a single array and `axis`, like reductions, but they don't
+eliminate the axis. For example, `np.sort(arr, axis=0)` is different than `np.sort(arr, axis=1)`,
+but both return an array of the same shape as `arr`.
+
+Just like a folded combination becomes a reduction, a *scanned* or *accumulated* combination becomes
+a transformation. Note that the way NumPy and other libraries notate these differs from the idea of
+a scan. `cumprod`, in Eins, is really just an alias for `cummultiply`, because Eins uses the
+combination rather than the reduction. If you have an array with elements `[a, b, c, d]` and an
+operator like `*`, then Eins computes
 
 ```python
 [a, a * b, (a * b) * c, ((a * b) * c) * d]
@@ -73,13 +94,14 @@ Similarly, if you wanted to compute root-mean-square error along an axis, you co
 
 ### Explicit Function Objects
 
-Eins supports a relatively sophisticated "stringly-typed" input format, as you've seen above. This means you rarely need
-any imports beyond `EinsOp`, and plays nicely with any kind of config files or serialization, but it does also make it
-harder to know what functions Eins defines or use your own.
+Eins supports a relatively sophisticated "stringly-typed" input format, as you've seen above. This
+means you rarely need any imports beyond `EinsOp`, and you can easily serialize the description of
+the operation, but it does also make it harder to know what functions Eins defines or use your own.
 
-If you prefer, you can instead pass in explicit objects: `Combination`, `Reduction`, `ElementwiseOp`, and
-`Transformation`. These are each base classes that you can implement yourself, but it's easiest to use the associated
-object exported from the base namespace: `Combinations`, `Reductions`, etc. These namespaces provide an autocomplete-friendly way of using these operations.
+If you prefer, you can instead pass in explicit objects: `Combination`, `Reduction`,
+`ElementwiseOp`, and `Transformation`. These are each base classes that you can implement yourself,
+but it's easiest to use the associated object exported from the base namespace: `Combinations`,
+`Reductions`, etc. These namespaces provide an autocomplete-friendly way of using these operations.
 
 Explicit objects are the only way to specify compositions with function syntax. If you pass in a callable to `combine`
 or `reduce`, Eins will assume it has the correct signature, but if you pass in `(my_func1, my_func2)` Eins has no way of

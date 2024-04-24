@@ -2,10 +2,9 @@
 
 import typing
 from dataclasses import dataclass
-from typing import Literal, Optional, Sequence, Union
+from typing import Literal, Optional, Sequence, TypeVar, Union
 
-from eins.common_types import Array, Combination, CombinationFunc
-from eins.elementwise import ElementwiseOp
+from eins.common_types import Array, Combination, CombinationFunc, ElementwiseOp
 from eins.utils import array_backend
 
 # https://data-apis.org/array-api/latest/API_specification/elementwise_functions.html Must be
@@ -24,6 +23,8 @@ ArrayCombineLiteral = Literal[
 ]
 
 ARRAY_COMBINE_OPS = [str(x) for x in typing.get_args(ArrayCombineLiteral)]
+
+Arr = TypeVar('Arr', bound=Array)
 
 
 @dataclass(frozen=True, unsafe_hash=True)
@@ -45,7 +46,7 @@ class ArrayCombination(Combination):
         else:
             return None
 
-    def __call__(self, arr1: Array, arr2: Array) -> Array:
+    def __call__(self, arr1: Arr, arr2: Arr) -> Arr:
         arrs = (arr1, arr2)
         if len(arrs) == 0:
             msg = 'Cannot combine empty list of arrays'
@@ -73,7 +74,7 @@ class CustomCombination(Combination):
 
     func: CombinationFunc
 
-    def __call__(self, arr1: Array, arr2: Array) -> Array:
+    def __call__(self, arr1: Arr, arr2: Arr) -> Arr:
         return self.func(arr1, arr2)
 
 
@@ -83,7 +84,7 @@ class CompositeCombination(Combination):
 
     ops: Sequence[Union[ElementwiseOp, Combination]]
 
-    def __call__(self, arr1: Array, arr2: Array) -> Array:
+    def __call__(self, arr1: Arr, arr2: Arr) -> Arr:
         arrs = (arr1, arr2)
         out = arrs
         combines = 0

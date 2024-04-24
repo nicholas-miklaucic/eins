@@ -24,6 +24,16 @@ ArrayReductionLiteral = Literal['max', 'mean', 'min', 'prod', 'std', 'sum', 'var
 
 ARRAY_REDUCE_OPS = [str(x) for x in typing.get_args(ArrayReductionLiteral)]
 
+# Not literal equality, but rather equality for the purposes of ordering. A mean isn't a sum, but it
+# commutes like one, because the shape is considered constant.
+ARRAY_FOLDS = {
+    'sum': 'add',
+    'prod': 'multiply',
+    'max': 'maximum',
+    'min': 'minimum',
+    'mean': 'sum',
+}
+
 
 @dataclass(frozen=True, unsafe_hash=True)
 class ArrayReduction(Reduction):
@@ -36,6 +46,13 @@ class ArrayReduction(Reduction):
 
     def __str__(self):
         return self.func_name
+
+    def fold_of(self) -> Optional[Combination]:
+        comb = ARRAY_FOLDS.get(self.func_name)
+        if comb is None:
+            return comb
+        else:
+            return parse_combination(comb)
 
     @classmethod
     def parse(cls, name: str):
@@ -86,6 +103,9 @@ class Fold(Reduction):
         else:
             return None
 
+    def fold_of(self) -> Optional[Combination]:
+        return self.combination
+
     def __call__(self, arr: Array, axis: int = 0) -> Array:
         xp = array_backend(arr)
         if xp is not None:
@@ -133,6 +153,11 @@ class PowerNorm(Reduction):
                 return None
         return None
 
+    def fold_of(self) -> Optional[Combination]:
+        # In the future, perhaps there's a way of letting Eins do optimizations with more knowledge
+        # of how this works.
+        return None
+
     def __call__(self, arr: Array, axis: int = 0) -> Array:
         xp = array_backend(arr)
         if xp is not None:
@@ -147,8 +172,9 @@ class PowerNorm(Reduction):
                 return xp.sum(xp.abs(arr), axis=axis)
             elif self.power == 2:
                 return xp.sqrt(xp.sum(xp.square(arr), axis=axis))
+            # General case
             else:
-                return xp.sum(xp.abs(arr) ** self.power, axis=axis) ** (1 / self.power)
+                return xp.sum(xp.abs(arr) ** self.power, axis=axis) ** (1.0 / self.power)
         else:
             msg = f'Cannot compute reduction for non-Array {arr} of type {type(arr)}'
             raise ValueError(msg)

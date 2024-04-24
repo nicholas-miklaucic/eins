@@ -32,7 +32,7 @@
     font-family: "Instrument Sans";
     font-style: italic;
     font-weight: 400;
-    src: url("InstrumentSansItalic[wdth\,wght].ttf") format('woff2');
+    src: url("InstrumentSans-Italic[wdth\,wght].ttf") format('woff2');
     font-variation-settings: "wght" 430, "wdth" 90;
 }
 
@@ -40,7 +40,7 @@
     font-family: "Instrument Sans";
     font-style: italic;
     font-weight: 700;
-    src: url("InstrumentSansItalic[wdth\,wght].ttf") format('woff2');
+    src: url("InstrumentSans-Italic[wdth\,wght].ttf") format('woff2');
     font-variation-settings: "wght" 700, "wdth" 90;
 }
 

@@ -239,7 +239,7 @@ That would give us the array of vectors between points, of shape `batch n1 n2 d`
 We do this by computing the Euclidean norm: the square root of the sum of the squares of the values
 along the axis. This is called the $L_2$ norm, hence the name.
 
-### Batched Custom Loss
+### Batched Mean Huber Loss
 
 The literals that Eins accepts are documented properly in the type system, so you should get a handy
 autocomplete for a name like `l2_norm`. The time will come when one of those options isn't
@@ -249,7 +249,7 @@ One solution is to simply pass in your own function. Combinations should have tw
 arguments and output an array of the same size, and custom reductions should take in a single
 positional argument and either `axis` or `dim` as keyword arguments.
 
-```py title="Average Huber Loss"
+```py title="Batched Mean Huber Loss"
 from torch.nn.functional import huber_loss
 
 EinsOp('batch out_features, batch out_features -> batch',
@@ -265,9 +265,10 @@ shape of the output:
 
 - **Elementwise functions** are basically just functions from real numbers to real numbers that you
   can batch arbitrarily. Examples are `np.sin`, `np.abs`, and `np.exp`. They have the signature
-  `f(Array) -> Array`.
+  `f(Array) -> Array`, and mathematically they're functions from a scalar to a scalar.
 - **Transformations** use an axis, but don't eliminate it. Examples are `np.sort`, `np.flip`,
-  `np.roll`, and normalization. They have the signature `f(Array, axis: int) -> Array`.
+  `np.roll`, and normalization. They have the signature `f(Array, axis: int) -> Array`, and
+  mathematically they're functions from a vector to a vector.
 
 Eins implements a library of these functions to go along with combinations and reductions. Combining
 them lets you make new functions that are easy to reason about and framework-agnostic. Passing in a
